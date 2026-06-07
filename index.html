@@ -413,9 +413,7 @@ footer{background:#05080f;border-top:1px solid var(--line);padding:56px clamp(18
         <div class="ci-row"><div class="cic">🌐</div><div><b>Sitio web</b><a href="https://www.maxprint.co" target="_blank" rel="noopener">www.maxprint.co</a></div></div>
         <div class="ci-row"><div class="cic">👤</div><div><b>Gerencia</b><span>Guillermo Fontalvo Restrepo</span></div></div>
       </div>
-      <form class="cform" name="contacto" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/?enviado=1">
-        <input type="hidden" name="form-name" value="contacto">
-        <p style="display:none"><label>No llenar: <input name="bot-field"></label></p>
+      <form class="cform" name="contacto" id="contactForm">
         <h3>Solicita tu cotización</h3>
         <div class="field"><label>Nombre</label><input type="text" name="nombre" id="f_name" placeholder="Tu nombre o empresa" required></div>
         <div class="field"><label>WhatsApp / Teléfono</label><input type="tel" name="telefono" id="f_phone" placeholder="300 000 0000" required></div>
@@ -578,20 +576,19 @@ new IntersectionObserver(function(es){if(es[0].isIntersecting)countUp();}).obser
 function waLink(msg){return 'https://wa.me/'+WA+'?text='+encodeURIComponent(msg);}
 document.getElementById('waFloat').href=waLink('Hola MAXPRINT, me gustaría recibir información sobre sus servicios.');
 document.querySelector('.nav-cta').setAttribute('href','#contacto');
-document.getElementById('sendWa').onclick=function(){
+function enviarCotizacionWhatsApp(){
   var n=document.getElementById('f_name').value||'(sin nombre)';
   var p=document.getElementById('f_phone').value||'';
   var s=document.getElementById('f_svc').value;
   var m=document.getElementById('f_msg').value||'';
   var txt='Hola MAXPRINT 👋\n\nSoy: '+n+'\nTeléfono: '+p+'\nServicio de interés: '+s+'\n\nProyecto: '+m;
-  var url=waLink(txt);
-  window.location.href=url;          /* fallback fiable si el navegador bloquea ventanas nuevas */
-};
-/* aviso de éxito al volver de Netlify Forms (?enviado=1) */
-if(location.search.indexOf('enviado=1')>=0){
-  var ok=document.getElementById('okMsg');
-  if(ok){ok.style.display='block';document.getElementById('contacto').scrollIntoView();}
+  window.location.href=waLink(txt);
 }
+document.getElementById('sendWa').onclick=enviarCotizacionWhatsApp;
+document.getElementById('contactForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  enviarCotizacionWhatsApp();
+});
 document.getElementById('yr').textContent=new Date().getFullYear();
 </script>
 </body>
