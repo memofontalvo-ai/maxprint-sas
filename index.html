@@ -512,6 +512,203 @@ footer{background:#05080f;border-top:1px solid var(--line);padding:56px clamp(18
   width:60px;height:4px;border-radius:2px;
   margin:16px auto 0;
 }
+
+/* ── MODAL LOGIN CONTROL OPERATIVO ── */
+.login-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(5,8,18,.97);
+  backdrop-filter:blur(20px);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.login-overlay.open{opacity:1;pointer-events:all}
+.login-card{
+  width:min(400px,100%);
+  background:linear-gradient(160deg,rgba(17,24,42,.99),rgba(8,11,20,1));
+  border:1px solid rgba(0,174,239,.25);border-radius:28px;
+  padding:40px 32px 36px;text-align:center;position:relative;
+  box-shadow:0 30px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06);
+  animation:loginIn .4s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes loginIn{from{transform:scale(.94) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.login-card::before{
+  content:"";position:absolute;top:0;left:24px;right:24px;height:3px;
+  background:linear-gradient(90deg,#e83a2f,#f6a623,#41b95f,#1ba6e6,#8a5cb4,#00aeef);
+  border-radius:0 0 4px 4px;
+}
+.login-close{
+  position:absolute;top:16px;right:16px;width:36px;height:36px;
+  border-radius:50%;border:1px solid rgba(255,255,255,.15);
+  background:none;color:#fff;font-size:1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;
+}
+.login-close:hover{background:rgba(255,255,255,.1)}
+.login-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.25);
+  border-radius:30px;padding:5px 14px;font-size:.7rem;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;color:#00aeef;margin-bottom:20px;
+}
+.login-dot{width:6px;height:6px;background:#00aeef;border-radius:50%;animation:ldot 2s infinite}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:.3}}
+.login-card h2{
+  font-family:'Archivo',sans-serif;font-weight:900;font-size:1.4rem;
+  text-transform:uppercase;color:#fff;margin-bottom:6px;
+}
+.login-sub{color:rgba(180,200,230,.55);font-size:.85rem;margin-bottom:28px}
+.login-field{margin-bottom:14px;text-align:left}
+.login-field label{
+  display:block;font-size:.75rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(180,200,230,.6);margin-bottom:7px;
+}
+.login-field input{
+  width:100%;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);border-radius:12px;
+  padding:14px 16px;color:#fff;font-size:.95rem;
+  font-family:'Manrope',sans-serif;outline:none;
+  transition:border-color .2s,background .2s;
+}
+.login-field input:focus{border-color:rgba(0,174,239,.5);background:rgba(0,174,239,.05)}
+.login-field input::placeholder{color:rgba(255,255,255,.2)}
+.login-btn{
+  width:100%;margin-top:8px;
+  background:linear-gradient(135deg,#00aeef,#0088cc);
+  color:#000;font-family:'Archivo',sans-serif;font-weight:900;
+  font-size:.95rem;text-transform:uppercase;letter-spacing:.08em;
+  padding:16px;border-radius:50px;border:none;cursor:pointer;
+  box-shadow:0 8px 28px rgba(0,174,239,.3);transition:all .2s;
+}
+.login-btn:hover{background:linear-gradient(135deg,#22c0f8,#00aeef);transform:translateY(-1px)}
+.login-error{
+  display:none;margin-top:12px;color:#e83a2f;font-size:.82rem;
+  background:rgba(232,58,47,.1);border:1px solid rgba(232,58,47,.2);
+  border-radius:10px;padding:9px 14px;
+}
+.login-error.show{display:block}
+.login-note{margin-top:20px;font-size:.72rem;color:rgba(180,200,230,.25)}
+/* Botón Control Operativo en footer */
+.btn-control{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,174,239,.07);border:1px solid rgba(0,174,239,.18);
+  border-radius:30px;padding:8px 18px;color:rgba(0,174,239,.6);
+  font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;border:none;margin-top:16px;
+  font-family:'Manrope',sans-serif;
+}
+.btn-control:hover{background:rgba(0,174,239,.14);color:#00aeef}
+
+/* ── BOTÓN CONTROL OPERATIVO NAV ── */
+.btn-ctrl-nav{
+  background:none;border:1px solid rgba(0,174,239,.3);
+  border-radius:8px;padding:6px 10px;
+  color:rgba(0,174,239,.7);font-size:.7rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;
+  font-family:'Manrope',sans-serif;
+  display:flex;align-items:center;gap:5px;
+  white-space:nowrap;
+}
+.btn-ctrl-nav:hover{background:rgba(0,174,239,.12);color:#00aeef;border-color:rgba(0,174,239,.6)}
+@media(max-width:640px){.btn-ctrl-nav span.ctrl-txt{display:none}}
+
+/* ── MODAL LOGIN ── */
+.login-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(5,8,18,.97);backdrop-filter:blur(20px);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.login-overlay.open{opacity:1;pointer-events:all}
+.login-card{
+  width:min(400px,100%);
+  background:linear-gradient(160deg,rgba(17,24,42,.99),rgba(8,11,20,1));
+  border:1px solid rgba(0,174,239,.25);border-radius:28px;
+  padding:40px 32px 36px;text-align:center;position:relative;
+  box-shadow:0 30px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06);
+  animation:loginIn .4s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes loginIn{from{transform:scale(.94) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.login-card::before{
+  content:"";position:absolute;top:0;left:24px;right:24px;height:3px;
+  background:linear-gradient(90deg,#e83a2f,#f6a623,#41b95f,#1ba6e6,#8a5cb4,#00aeef);
+  border-radius:0 0 4px 4px;
+}
+.login-close{
+  position:absolute;top:16px;right:16px;width:36px;height:36px;
+  border-radius:50%;border:1px solid rgba(255,255,255,.15);
+  background:none;color:#fff;font-size:1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;
+}
+.login-close:hover{background:rgba(255,255,255,.1)}
+.login-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(0,174,239,.08);border:1px solid rgba(0,174,239,.25);
+  border-radius:30px;padding:5px 14px;font-size:.7rem;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;color:#00aeef;margin-bottom:20px;
+}
+.login-dot{width:6px;height:6px;background:#00aeef;border-radius:50%;animation:ldot 2s infinite}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:.3}}
+.login-card h2{
+  font-family:'Archivo',sans-serif;font-weight:900;font-size:1.4rem;
+  text-transform:uppercase;color:#fff;margin-bottom:6px;
+}
+.login-sub{color:rgba(180,200,230,.55);font-size:.85rem;margin-bottom:28px}
+.login-field{margin-bottom:14px;text-align:left}
+.login-field label{
+  display:block;font-size:.75rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(180,200,230,.6);margin-bottom:7px;
+}
+.login-field input{
+  width:100%;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);border-radius:12px;
+  padding:14px 16px;color:#fff;font-size:.95rem;
+  font-family:'Manrope',sans-serif;outline:none;
+  transition:border-color .2s,background .2s;
+}
+.login-field input:focus{border-color:rgba(0,174,239,.5);background:rgba(0,174,239,.05)}
+.login-field input::placeholder{color:rgba(255,255,255,.2)}
+.login-btn{
+  width:100%;margin-top:8px;
+  background:linear-gradient(135deg,#00aeef,#0088cc);
+  color:#000;font-family:'Archivo',sans-serif;font-weight:900;
+  font-size:.95rem;text-transform:uppercase;letter-spacing:.08em;
+  padding:16px;border-radius:50px;border:none;cursor:pointer;
+  box-shadow:0 8px 28px rgba(0,174,239,.3);transition:all .2s;
+}
+.login-btn:hover{background:linear-gradient(135deg,#22c0f8,#00aeef);transform:translateY(-1px)}
+.login-error{
+  display:none;margin-top:12px;color:#e83a2f;font-size:.82rem;
+  background:rgba(232,58,47,.1);border:1px solid rgba(232,58,47,.2);
+  border-radius:10px;padding:9px 14px;
+}
+.login-error.show{display:block}
+.login-note{margin-top:20px;font-size:.72rem;color:rgba(180,200,230,.25)}
+
+/* ── PASS WRAP + OJO ── */
+.pass-wrap{position:relative}
+.pass-wrap input{padding-right:46px}
+.eye-btn{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;font-size:1.1rem;
+  color:rgba(255,255,255,.4);padding:0;line-height:1;transition:color .2s;
+}
+.eye-btn:hover{color:rgba(255,255,255,.8)}
+.cambiar-link{
+  background:none;border:none;cursor:pointer;
+  color:rgba(0,174,239,.6);font-size:.82rem;
+  margin-top:14px;display:block;text-align:center;
+  font-family:'Manrope',sans-serif;transition:color .2s;
+  text-decoration:underline;
+}
+.cambiar-link:hover{color:#00aeef}
+.login-ok{
+  margin-top:12px;color:#41b95f;font-size:.82rem;
+  background:rgba(65,185,95,.1);border:1px solid rgba(65,185,95,.2);
+  border-radius:10px;padding:9px 14px;text-align:center;
+}
 </style>
 </head>
 <body>
@@ -527,6 +724,7 @@ footer{background:#05080f;border-top:1px solid var(--line);padding:56px clamp(18
     <a href="#contacto">Contacto</a>
   </div>
   <a href="#formulario" class="nav-cta">Cotizar ahora</a>
+  <button class="btn-ctrl-nav" id="btnCtrlNav">⚙ <span class="ctrl-txt">Control Operativo</span></button>
   <button class="burger" id="burger" aria-label="Menú"><span></span><span></span><span></span></button>
 </nav>
 
@@ -714,7 +912,7 @@ footer{background:#05080f;border-top:1px solid var(--line);padding:56px clamp(18
     </div>
   </div>
   <div class="foot-bot">
-    <span>© <span id="yr"></span> MAXPRINT S.A.S. — Todos los derechos reservados.</span>
+    <span><button class="btn-control" id="btnControl">⚙ Control Operativo</button><br><br>© <span id="yr"></span> MAXPRINT S.A.S. — Todos los derechos reservados.</span>
     <span>Diseñado con máxima tecnología.</span>
   </div>
 </footer>
@@ -890,7 +1088,7 @@ function enviarCotizacionWhatsApp(){
   var s=document.getElementById('f_svc').value;
   var m=document.getElementById('f_msg').value||'';
   var txt='Hola MAXPRINT 👋\n\nSoy: '+n+'\nTeléfono: '+p+'\nServicio de interés: '+s+'\n\nProyecto: '+m;
-  window.location.href=waLink(txt);
+  window.open(waLink(txt), '_blank');
 }
 document.getElementById('sendWa').onclick=enviarCotizacionWhatsApp;
 document.getElementById('contactForm').addEventListener('submit',function(e){
@@ -911,5 +1109,312 @@ document.getElementById('yr').textContent=new Date().getFullYear();
     <img id="icLbCollageImg" src="" alt="">
   </div>
 </div>
+
+<!-- MODAL CONTROL OPERATIVO -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card" id="loginCard">
+
+    <!-- VISTA: INGRESAR -->
+    <div id="vistaLogin">
+      <button class="login-close" id="loginClose">✕</button>
+      <div class="login-badge"><div class="login-dot"></div>Acceso Restringido</div>
+      <h2>Control Operativo</h2>
+      <p class="login-sub">Exclusivo para el equipo MAXPRINT</p>
+      <div class="login-field">
+        <label>Usuario</label>
+        <input type="text" id="loginUser" placeholder="Nombre de usuario" autocomplete="off" autocapitalize="none">
+      </div>
+      <div class="login-field">
+        <label>Contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="eye-btn" id="eyeBtn">👁</button>
+        </div>
+      </div>
+      <button class="login-btn" id="loginBtn">Ingresar →</button>
+      <div class="login-error" id="loginError">❌ Usuario o contraseña incorrectos.</div>
+      <button type="button" class="cambiar-link" id="abrirCambio">¿Cambiar contraseña?</button>
+      <p class="login-note">MAXPRINT S.A.S. · Sistema de Gestión</p>
+    </div>
+
+    <!-- VISTA: CAMBIAR CONTRASEÑA -->
+    <div id="vistaCambio" style="display:none">
+      <button class="login-close" id="cambioClose">✕</button>
+      <div class="login-badge"><div class="login-dot"></div>Cambiar Contraseña</div>
+      <h2>Nueva Contraseña</h2>
+      <p class="login-sub">Ingresa tu usuario y contraseña actual</p>
+      <div class="login-field">
+        <label>Usuario</label>
+        <input type="text" id="cambioUser" placeholder="Nombre de usuario" autocomplete="off" autocapitalize="none">
+      </div>
+      <div class="login-field">
+        <label>Contraseña actual</label>
+        <div class="pass-wrap">
+          <input type="password" id="cambioActual" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="eye-btn" id="eyeActual">👁</button>
+        </div>
+      </div>
+      <div class="login-field">
+        <label>Nueva contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="cambioNueva" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="eye-btn" id="eyeNueva">👁</button>
+        </div>
+      </div>
+      <div class="login-field">
+        <label>Confirmar nueva contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="cambioConfirm" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="eye-btn" id="eyeConfirm">👁</button>
+        </div>
+      </div>
+      <button class="login-btn" id="cambioBtn">Guardar contraseña →</button>
+      <div class="login-error" id="cambioError"></div>
+      <div class="login-ok" id="cambioOk" style="display:none">✅ Contraseña cambiada correctamente.</div>
+      <button type="button" class="cambiar-link" id="volverLogin">← Volver al inicio</button>
+      <p class="login-note">MAXPRINT S.A.S. · Sistema de Gestión</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ── CONTROL OPERATIVO LOGIN ── */
+(function(){
+  var USUARIO = "admin";
+  var CLAVE = "MAXPRINT2026";
+  var URL_SISTEMA = "https://memofontalvo-ai.github.io/MAXPRINT-/";
+  var overlay = document.getElementById('loginOverlay');
+  var btnClose = document.getElementById('loginClose');
+  var btnLogin = document.getElementById('loginBtn');
+  var inputUser = document.getElementById('loginUser');
+  var inputPass = document.getElementById('loginPass');
+  var errorMsg = document.getElementById('loginError');
+  var btnControl = document.getElementById('btnControl');
+
+  function abrirLogin(){
+    overlay.classList.add('open');
+    setTimeout(function(){ inputUser.focus(); }, 300);
+  }
+  function cerrarLogin(){
+    overlay.classList.remove('open');
+    inputUser.value='';
+    inputPass.value='';
+    errorMsg.classList.remove('show');
+  }
+  function ingresar(){
+    var u = inputUser.value.trim().toLowerCase();
+    var p = inputPass.value.trim();
+    if(u === USUARIO && p === CLAVE){
+      errorMsg.classList.remove('show');
+      cerrarLogin();
+      window.open(URL_SISTEMA, '_blank');
+    } else {
+      errorMsg.classList.add('show');
+      inputPass.value='';
+      inputPass.focus();
+    }
+  }
+  if(btnControl) btnControl.onclick = abrirLogin;
+  if(btnClose) btnClose.onclick = cerrarLogin;
+  if(overlay) overlay.onclick = function(e){ if(e.target===overlay){ cerrarLogin(); } };
+  if(btnLogin) btnLogin.onclick = ingresar;
+  if(inputPass) inputPass.addEventListener('keydown', function(e){ if(e.key==='Enter'){ ingresar(); } });
+  if(inputUser) inputUser.addEventListener('keydown', function(e){ if(e.key==='Enter'){ inputPass.focus(); } });
+})();
+</script>
+
+<!-- MODAL CONTROL OPERATIVO -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card" id="loginCard">
+
+    <!-- VISTA: INGRESAR -->
+    <div id="vistaLogin">
+      <button class="login-close" id="loginClose">✕</button>
+      <div class="login-badge"><div class="login-dot"></div>Acceso Restringido</div>
+      <h2>Control Operativo</h2>
+      <p class="login-sub">Exclusivo para el equipo MAXPRINT</p>
+      <div class="login-field">
+        <label>Usuario</label>
+        <input type="text" id="loginUser" placeholder="Nombre de usuario" autocomplete="off" autocapitalize="none">
+      </div>
+      <div class="login-field">
+        <label>Contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="eye-btn" id="eyeBtn">👁</button>
+        </div>
+      </div>
+      <button class="login-btn" id="loginBtn">Ingresar →</button>
+      <div class="login-error" id="loginError">❌ Usuario o contraseña incorrectos.</div>
+      <button type="button" class="cambiar-link" id="abrirCambio">¿Cambiar contraseña?</button>
+      <p class="login-note">MAXPRINT S.A.S. · Sistema de Gestión</p>
+    </div>
+
+    <!-- VISTA: CAMBIAR CONTRASEÑA -->
+    <div id="vistaCambio" style="display:none">
+      <button class="login-close" id="cambioClose">✕</button>
+      <div class="login-badge"><div class="login-dot"></div>Cambiar Contraseña</div>
+      <h2>Nueva Contraseña</h2>
+      <p class="login-sub">Ingresa tu usuario y contraseña actual</p>
+      <div class="login-field">
+        <label>Usuario</label>
+        <input type="text" id="cambioUser" placeholder="Nombre de usuario" autocomplete="off" autocapitalize="none">
+      </div>
+      <div class="login-field">
+        <label>Contraseña actual</label>
+        <div class="pass-wrap">
+          <input type="password" id="cambioActual" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="eye-btn" id="eyeActual">👁</button>
+        </div>
+      </div>
+      <div class="login-field">
+        <label>Nueva contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="cambioNueva" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="eye-btn" id="eyeNueva">👁</button>
+        </div>
+      </div>
+      <div class="login-field">
+        <label>Confirmar nueva contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="cambioConfirm" placeholder="••••••••" autocomplete="off">
+          <button type="button" class="eye-btn" id="eyeConfirm">👁</button>
+        </div>
+      </div>
+      <button class="login-btn" id="cambioBtn">Guardar contraseña →</button>
+      <div class="login-error" id="cambioError"></div>
+      <div class="login-ok" id="cambioOk" style="display:none">✅ Contraseña cambiada correctamente.</div>
+      <button type="button" class="cambiar-link" id="volverLogin">← Volver al inicio</button>
+      <p class="login-note">MAXPRINT S.A.S. · Sistema de Gestión</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ── CONTROL OPERATIVO LOGIN ── */
+(function(){
+  var USUARIO = "admin";
+  var CLAVE_KEY = "mp_clave";
+  var URL_SISTEMA = "https://memofontalvo-ai.github.io/MAXPRINT-/";
+
+  function getClave(){
+    try{ var c=localStorage.getItem(CLAVE_KEY); return c||"MAXPRINT2026"; }catch(e){ return "MAXPRINT2026"; }
+  }
+  function setClave(c){
+    try{ localStorage.setItem(CLAVE_KEY, c); }catch(e){}
+  }
+
+  var overlay   = document.getElementById('loginOverlay');
+  var vistaLogin  = document.getElementById('vistaLogin');
+  var vistaCambio = document.getElementById('vistaCambio');
+
+  /* ── VISTA LOGIN ── */
+  var btnClose  = document.getElementById('loginClose');
+  var btnLogin  = document.getElementById('loginBtn');
+  var inputUser = document.getElementById('loginUser');
+  var inputPass = document.getElementById('loginPass');
+  var errorMsg  = document.getElementById('loginError');
+  var btnNav    = document.getElementById('btnCtrlNav');
+  var eyeBtn    = document.getElementById('eyeBtn');
+  var abrirCambio = document.getElementById('abrirCambio');
+
+  /* ── VISTA CAMBIO ── */
+  var cambioClose   = document.getElementById('cambioClose');
+  var cambioUser    = document.getElementById('cambioUser');
+  var cambioActual  = document.getElementById('cambioActual');
+  var cambioNueva   = document.getElementById('cambioNueva');
+  var cambioConfirm = document.getElementById('cambioConfirm');
+  var cambioBtn     = document.getElementById('cambioBtn');
+  var cambioError   = document.getElementById('cambioError');
+  var cambioOk      = document.getElementById('cambioOk');
+  var volverLogin   = document.getElementById('volverLogin');
+  var eyeActual     = document.getElementById('eyeActual');
+  var eyeNueva      = document.getElementById('eyeNueva');
+  var eyeConfirm    = document.getElementById('eyeConfirm');
+
+  function toggleEye(input, btn){
+    if(input.type==='password'){ input.type='text'; btn.textContent='🙈'; }
+    else{ input.type='password'; btn.textContent='👁'; }
+  }
+
+  function mostrarVista(vista){
+    vistaLogin.style.display  = vista==='login'  ? '' : 'none';
+    vistaCambio.style.display = vista==='cambio' ? '' : 'none';
+  }
+
+  function abrirLogin(){
+    overlay.classList.add('open');
+    mostrarVista('login');
+    setTimeout(function(){ if(inputUser) inputUser.focus(); }, 300);
+  }
+  function cerrarLogin(){
+    overlay.classList.remove('open');
+    if(inputUser)   inputUser.value='';
+    if(inputPass)   inputPass.value='';
+    if(errorMsg)    errorMsg.classList.remove('show');
+    if(cambioUser)    cambioUser.value='';
+    if(cambioActual)  cambioActual.value='';
+    if(cambioNueva)   cambioNueva.value='';
+    if(cambioConfirm) cambioConfirm.value='';
+    if(cambioError)   cambioError.classList.remove('show');
+    if(cambioOk)      cambioOk.style.display='none';
+  }
+  function ingresar(){
+    var u = inputUser.value.trim().toLowerCase();
+    var p = inputPass.value.trim();
+    if(u===USUARIO && p===getClave()){
+      errorMsg.classList.remove('show');
+      cerrarLogin();
+      window.open(URL_SISTEMA, '_blank');
+    } else {
+      errorMsg.classList.add('show');
+      inputPass.value='';
+      inputPass.focus();
+    }
+  }
+  function guardarClave(){
+    var u  = cambioUser.value.trim().toLowerCase();
+    var pa = cambioActual.value.trim();
+    var pn = cambioNueva.value.trim();
+    var pc = cambioConfirm.value.trim();
+    cambioOk.style.display='none';
+    cambioError.classList.remove('show');
+    if(u!==USUARIO || pa!==getClave()){
+      cambioError.textContent='❌ Usuario o contraseña actual incorrectos.';
+      cambioError.classList.add('show'); return;
+    }
+    if(pn.length < 6){
+      cambioError.textContent='❌ La nueva contraseña debe tener al menos 6 caracteres.';
+      cambioError.classList.add('show'); return;
+    }
+    if(pn!==pc){
+      cambioError.textContent='❌ Las contraseñas no coinciden.';
+      cambioError.classList.add('show'); return;
+    }
+    setClave(pn);
+    cambioActual.value=''; cambioNueva.value=''; cambioConfirm.value='';
+    cambioOk.style.display='block';
+    setTimeout(function(){ mostrarVista('login'); cambioOk.style.display='none'; }, 2000);
+  }
+
+  if(btnNav)      btnNav.onclick    = abrirLogin;
+  if(btnClose)    btnClose.onclick  = cerrarLogin;
+  if(cambioClose) cambioClose.onclick = cerrarLogin;
+  if(overlay)     overlay.onclick   = function(e){ if(e.target===overlay){ cerrarLogin(); } };
+  if(btnLogin)    btnLogin.onclick  = ingresar;
+  if(abrirCambio) abrirCambio.onclick = function(){ mostrarVista('cambio'); };
+  if(volverLogin) volverLogin.onclick = function(){ mostrarVista('login'); };
+  if(cambioBtn)   cambioBtn.onclick = guardarClave;
+  if(eyeBtn)    eyeBtn.onclick    = function(){ toggleEye(inputPass,   eyeBtn);    };
+  if(eyeActual) eyeActual.onclick = function(){ toggleEye(cambioActual, eyeActual); };
+  if(eyeNueva)  eyeNueva.onclick  = function(){ toggleEye(cambioNueva,  eyeNueva);  };
+  if(eyeConfirm)eyeConfirm.onclick= function(){ toggleEye(cambioConfirm,eyeConfirm);};
+
+  if(inputPass) inputPass.addEventListener('keydown',function(e){ if(e.key==='Enter'){ ingresar(); } });
+  if(inputUser) inputUser.addEventListener('keydown',function(e){ if(e.key==='Enter'){ if(inputPass) inputPass.focus(); } });
+})();
+</script>
 </body>
 </html>
