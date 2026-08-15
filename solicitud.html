@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Solicitar reserva · La Matriarca</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#12151a; --panel:#191d25; --panel-alt:#1f242e; --panel-raised:#262c38;
+  --border:#2b313d; --text:#edeef1; --text-muted:#8b93a3; --text-dim:#5c6472;
+  --gold:#c9a15a; --gold-bright:#e0bb78; --radius:12px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+  min-height:100vh; padding:20px 16px 60px; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:480px; margin:0 auto;}
+.brand{font-family:'Fraunces',serif; font-weight:700; font-size:24px; color:var(--gold-bright); text-align:center; margin-bottom:4px;}
+.subtitle{text-align:center; color:var(--text-muted); font-size:13px; margin-bottom:28px;}
+.field{margin-bottom:16px;}
+.field label{font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.3px;}
+.field input, .field select, .field textarea{
+  width:100%; background:var(--panel-alt); border:1px solid var(--border); color:var(--text);
+  padding:12px 13px; border-radius:10px; font-size:15px;
+}
+.field textarea{resize:vertical; min-height:70px; font-family:inherit;}
+.field-row{display:flex; gap:10px;}
+.field-row .field{flex:1;}
+.turno-opts{display:flex; gap:8px;}
+.turno-opt{
+  flex:1; padding:11px 6px; border-radius:10px; font-size:13px; font-weight:600;
+  background:var(--panel-alt); border:1.5px solid var(--border); color:var(--text-muted);
+  text-align:center;
+}
+.turno-opt.on{background:linear-gradient(135deg, var(--gold), #a97f3f); border-color:var(--gold); color:#1a1408;}
+.vip-opts{display:flex; gap:8px;}
+.vip-opt{
+  flex:1; padding:11px 6px; border-radius:10px; font-size:14px; font-weight:600;
+  background:var(--panel-alt); border:1.5px solid var(--border); color:var(--text-muted);
+  text-align:center;
+}
+.vip-opt.on{background:rgba(201,161,90,0.18); border-color:var(--gold); color:var(--gold-bright);}
+.btn-enviar{
+  width:100%; padding:15px; border-radius:12px; background:var(--gold); color:#1a1408;
+  font-size:15px; font-weight:700; margin-top:8px; border:none;
+}
+.btn-enviar:active{background:var(--gold-bright);}
+.btn-enviar:disabled{opacity:.5;}
+.error-msg{color:#e5636a; font-size:12.5px; margin-top:-8px; margin-bottom:14px; display:none;}
+.confirmacion{display:none; text-align:center; padding:50px 10px;}
+.confirmacion .check{font-size:52px; margin-bottom:16px;}
+.confirmacion h2{font-family:'Fraunces',serif; font-size:22px; color:var(--gold-bright); margin-bottom:10px;}
+.confirmacion p{color:var(--text-muted); font-size:14px; line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div id="formulario">
+    <div class="brand">La Matriarca</div>
+    <div class="subtitle">Cuéntanos los detalles de tu reserva</div>
+
+    <div class="field">
+      <label>Fecha</label>
+      <input type="date" id="fFecha">
+    </div>
+
+    <div class="field">
+      <label>Turno</label>
+      <div class="turno-opts" id="turnoOpts">
+        <button type="button" class="turno-opt" data-val="desayuno" onclick="elegirTurno('desayuno')">Desayuno</button>
+        <button type="button" class="turno-opt" data-val="almuerzo" onclick="elegirTurno('almuerzo')">Almuerzo</button>
+        <button type="button" class="turno-opt" data-val="cena" onclick="elegirTurno('cena')">Cena</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Hora aproximada</label>
+      <input type="time" id="fHora">
+    </div>
+
+    <div class="field">
+      <label>Nombre de la reserva</label>
+      <input type="text" id="fNombre" placeholder="Tu nombre completo">
+    </div>
+
+    <div class="field">
+      <label>Celular de contacto</label>
+      <input type="tel" id="fCelular" placeholder="300 000 0000">
+    </div>
+
+    <div class="field">
+      <label>Cantidad de personas</label>
+      <input type="number" id="fPax" min="1" placeholder="4">
+    </div>
+
+    <div class="field">
+      <label>¿Deseas mesa VIP?</label>
+      <div class="vip-opts" id="vipOpts">
+        <button type="button" class="vip-opt" data-val="si" onclick="elegirVip('si')">Sí, VIP</button>
+        <button type="button" class="vip-opt" data-val="no" onclick="elegirVip('no')">Mesa normal</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Observaciones (opcional)</label>
+      <textarea id="fObs" placeholder="Ocasión especial, alguna solicitud particular..."></textarea>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+    <button class="btn-enviar" id="btnEnviar" onclick="enviarSolicitud()">Enviar solicitud de reserva</button>
+  </div>
+
+  <div class="confirmacion" id="confirmacion">
+    <div class="check">✓</div>
+    <h2>¡Solicitud enviada!</h2>
+    <p>Gracias, recibimos los detalles de tu reserva.<br>El equipo de La Matriarca te va a contactar pronto para confirmarla.</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDJCy93GCOhDySnC_OLo6pcV-wK_pC48_A",
+    authDomain: "matriarca-reservas.firebaseapp.com",
+    projectId: "matriarca-reservas",
+    storageBucket: "matriarca-reservas.firebasestorage.app",
+    messagingSenderId: "370240403780",
+    appId: "1:370240403780:web:2ccceaf8da9daf37b8bf11"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  let turnoSel = null;
+  let vipSel = null;
+
+  function elegirTurno(t){
+    turnoSel = t;
+    document.querySelectorAll('.turno-opt').forEach(b => b.classList.toggle('on', b.dataset.val === t));
+  }
+  function elegirVip(v){
+    vipSel = v;
+    document.querySelectorAll('.vip-opt').forEach(b => b.classList.toggle('on', b.dataset.val === v));
+  }
+
+  // Fecha mínima: hoy
+  const hoy = new Date();
+  document.getElementById('fFecha').min = hoy.toISOString().slice(0,10);
+  document.getElementById('fFecha').value = hoy.toISOString().slice(0,10);
+
+  function enviarSolicitud(){
+    const fecha = document.getElementById('fFecha').value;
+    const hora = document.getElementById('fHora').value;
+    const nombre = document.getElementById('fNombre').value.trim();
+    const celular = document.getElementById('fCelular').value.trim();
+    const pax = Number(document.getElementById('fPax').value);
+    const obsTexto = document.getElementById('fObs').value.trim();
+    const errorMsg = document.getElementById('errorMsg');
+
+    if(!fecha || !turnoSel || !hora || !nombre || !pax || !vipSel){
+      errorMsg.textContent = 'Por favor completa fecha, turno, hora, nombre, cantidad de personas y si deseas VIP.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    errorMsg.style.display = 'none';
+
+    const obsFinal = obsTexto;
+
+    const btn = document.getElementById('btnEnviar');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    db.collection('reservas').add({
+      fecha, turno: turnoSel, hora, nombre, celular, pax,
+      mesa: '', abono: 0, menu: '', obs: obsFinal,
+      vipSolicitada: (vipSel === 'si'),
+      pasoPorSolicitud: true,
+      estado: 'solicitud', canal: 'WhatsApp (autogestión)'
+    }).then(() => {
+      document.getElementById('formulario').style.display = 'none';
+      document.getElementById('confirmacion').style.display = 'block';
+    }).catch(err => {
+      console.error(err);
+      errorMsg.textContent = 'No se pudo enviar la solicitud. Revisa tu conexión e intenta de nuevo.';
+      errorMsg.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Enviar solicitud de reserva';
+    });
+  }
+</script>
+</body>
+</html>
