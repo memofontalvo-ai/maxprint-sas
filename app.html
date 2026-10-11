@@ -1,4 +1,4 @@
-
+<!-- MAXPRINT Control Operativo v1.2 — 2026-10-10 | Fix: ojo login + contraseña por defecto + espera carga Firebase -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -490,7 +490,7 @@ main{padding:12px;max-width:700px;margin:0 auto;}
         <input id="login-pass" type="password" placeholder="Contraseña" autocomplete="current-password"
           style="width:100%;background:var(--s2);border:1.5px solid var(--b);border-radius:10px;color:var(--t);font-size:15px;padding:11px 42px 11px 13px;outline:none;font-family:'DM Sans',sans-serif;"
           onkeydown="if(event.key==='Enter')doLogin()">
-        <span onclick="toggleEye('login-pass','eye-lp')" id="eye-lp" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;">👁️</span>
+        <button type="button" onclick="toggleEye('login-pass','eye-lp')" id="eye-lp" style="position:absolute;right:0;top:0;bottom:0;width:46px;background:transparent;border:none;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;z-index:5;-webkit-tap-highlight-color:transparent;">👁️</button>
       </div>
       <div id="login-err" style="font-size:11px;color:var(--r);min-height:16px;margin-bottom:8px;"></div>
       <button onclick="doLogin()" style="width:100%;background:var(--a);color:#000;border:none;border-radius:10px;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;cursor:pointer;margin-bottom:12px;">INGRESAR</button>
@@ -1596,7 +1596,8 @@ window.goPDF = function(){
 };
 /* ── LOGIN ── */
 var SYS_USER = 'admin';
-var SYS_PASS = 'MaxPrint2026';
+var SYS_PASS = 'MAXPRINT2026';
+var _credsLoaded = false;
 
 /* Cargar credenciales desde Firebase al iniciar */
 async function loadCredentials(){
@@ -1608,6 +1609,7 @@ async function loadCredentials(){
       if(d.pass) SYS_PASS = d.pass;
     }
   } catch(e){ console.warn('No se pudieron cargar credenciales:', e); }
+  _credsLoaded = true;
 }
 loadCredentials();
 
@@ -1615,19 +1617,29 @@ loadCredentials();
 window.toggleEye = function(inputId, eyeId){
   var inp = document.getElementById(inputId);
   var eye = document.getElementById(eyeId);
+  if(!inp || !eye) return;
   if(inp.type === 'password'){
     inp.type = 'text';
-    eye.textContent = '🙈';
+    eye.innerHTML = '🙈';
   } else {
     inp.type = 'password';
-    eye.textContent = '👁️';
+    eye.innerHTML = '👁️';
   }
 };
 
-window.doLogin = function(){
+window.doLogin = async function(){
   var u = document.getElementById('login-user').value.trim();
   var p = document.getElementById('login-pass').value;
   var err = document.getElementById('login-err');
+  /* Si las credenciales de Firebase aún no cargaron, esperamos hasta 3s */
+  if(!_credsLoaded){
+    err.textContent = '⏳ Verificando...';
+    for(var i=0;i<30;i++){
+      await new Promise(r=>setTimeout(r,100));
+      if(_credsLoaded) break;
+    }
+    err.textContent = '';
+  }
   if(u === SYS_USER && p === SYS_PASS){
     err.textContent = '';
     sessionStorage.setItem('mp_sesion', 'activa');
