@@ -1,4 +1,4 @@
-<!-- MAXPRINT Control Operativo v1.3 — 2026-10-10 | Fix: cierre HTML + contraseña MAXPRINT2026 + ojo login -->
+<!-- MAXPRINT Control Operativo v1.4 — 2026-10-10 | Fix: cierre HTML + contraseña MAXPRINT2026 + ojo login -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -497,7 +497,7 @@ main{padding:12px;max-width:700px;margin:0 auto;}
       <button onclick="openChangePass()" style="background:transparent;border:none;color:var(--tm);font-size:12px;cursor:pointer;text-decoration:underline;">Cambiar contraseña</button>
     </div>
   </div>
-  <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--tm);letter-spacing:1px;opacity:.6;">v1.3 — 2026-10-10</div>
+  <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--tm);letter-spacing:1px;opacity:.6;">v1.4 — 2026-10-10</div>
 </div>
 
 <!-- ════════ MODAL CAMBIAR CONTRASEÑA ════════ -->
@@ -1207,6 +1207,61 @@ function clk() {
 }
 clk(); setInterval(clk, 1000);
 </script>
+
+<!-- LOGIN y OJO: script normal (no módulo) para que funcione siempre, incluso si Firebase falla -->
+<script>
+/* Credenciales por defecto — se sobreescriben si Firebase carga */
+window._SYS_USER = 'admin';
+window._SYS_PASS = 'MAXPRINT2026';
+window._credsReady = false;
+
+/* Ojo: mostrar/ocultar contraseña */
+window.toggleEye = function(inputId, eyeId){
+  var inp = document.getElementById(inputId);
+  var eye = document.getElementById(eyeId);
+  if(!inp || !eye) return;
+  if(inp.type === 'password'){
+    inp.type = 'text';
+    eye.innerHTML = '🙈';
+  } else {
+    inp.type = 'password';
+    eye.innerHTML = '👁️';
+  }
+};
+
+/* Login: funciona aunque Firebase no haya cargado */
+window.doLogin = async function(){
+  var u = document.getElementById('login-user').value.trim();
+  var p = document.getElementById('login-pass').value;
+  var err = document.getElementById('login-err');
+  /* Si Firebase aún no cargó credenciales, esperamos máx 2s */
+  if(!window._credsReady){
+    err.textContent = '⏳ Verificando...';
+    for(var i = 0; i < 20; i++){
+      await new Promise(function(r){ setTimeout(r, 100); });
+      if(window._credsReady) break;
+    }
+    err.textContent = '';
+  }
+  if(u === window._SYS_USER && p === window._SYS_PASS){
+    err.textContent = '';
+    sessionStorage.setItem('mp_sesion', 'activa');
+    var bl = document.getElementById('btn-logout');
+    if(bl) bl.style.display = '';
+    if(typeof _gs === 'function') _gs('home');
+  } else {
+    err.textContent = '⚠️ Usuario o contraseña incorrectos';
+    document.getElementById('login-pass').value = '';
+  }
+};
+
+window.doLogout = function(){
+  sessionStorage.removeItem('mp_sesion');
+  var bl = document.getElementById('btn-logout');
+  if(bl) bl.style.display = 'none';
+  if(typeof _gs === 'function') _gs('login-screen');
+};
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1595,68 +1650,21 @@ window.goPDF = function(){
     },80);
   },80);
 };
-/* ── LOGIN ── */
-var SYS_USER = 'admin';
-var SYS_PASS = 'MAXPRINT2026';
-var _credsLoaded = false;
-
-/* Cargar credenciales desde Firebase al iniciar */
+/* ── LOGIN (credenciales desde Firebase) ── */
+/* Las funciones de login/logout/ojo están en el script normal antes del módulo */
+/* Aquí solo actualizamos las variables globales si Firebase tiene credenciales */
 async function loadCredentials(){
   try {
     var snap = await getDoc(doc(db,'config','credentials'));
     if(snap.exists()){
       var d = snap.data();
-      if(d.user) SYS_USER = d.user;
-      if(d.pass) SYS_PASS = d.pass;
+      if(d.user) window._SYS_USER = d.user;
+      if(d.pass) window._SYS_PASS = d.pass;
     }
-  } catch(e){ console.warn('No se pudieron cargar credenciales:', e); }
-  _credsLoaded = true;
+  } catch(e){ console.warn('Credenciales Firebase no disponibles, usando default:', e); }
+  window._credsReady = true;
 }
 loadCredentials();
-
-/* Mostrar/ocultar contraseña */
-window.toggleEye = function(inputId, eyeId){
-  var inp = document.getElementById(inputId);
-  var eye = document.getElementById(eyeId);
-  if(!inp || !eye) return;
-  if(inp.type === 'password'){
-    inp.type = 'text';
-    eye.innerHTML = '🙈';
-  } else {
-    inp.type = 'password';
-    eye.innerHTML = '👁️';
-  }
-};
-
-window.doLogin = async function(){
-  var u = document.getElementById('login-user').value.trim();
-  var p = document.getElementById('login-pass').value;
-  var err = document.getElementById('login-err');
-  /* Si las credenciales de Firebase aún no cargaron, esperamos hasta 3s */
-  if(!_credsLoaded){
-    err.textContent = '⏳ Verificando...';
-    for(var i=0;i<30;i++){
-      await new Promise(r=>setTimeout(r,100));
-      if(_credsLoaded) break;
-    }
-    err.textContent = '';
-  }
-  if(u === SYS_USER && p === SYS_PASS){
-    err.textContent = '';
-    sessionStorage.setItem('mp_sesion', 'activa');
-    document.getElementById('btn-logout').style.display = '';
-    _gs('home');
-  } else {
-    err.textContent = '⚠️ Usuario o contraseña incorrectos';
-    document.getElementById('login-pass').value = '';
-  }
-};
-
-window.doLogout = function(){
-  sessionStorage.removeItem('mp_sesion');
-  document.getElementById('btn-logout').style.display = 'none';
-  _gs('login-screen');
-};
 
 window.openChangePass = function(){
   document.getElementById('cp-old').value='';
@@ -1671,12 +1679,12 @@ window.doChangePass = async function(){
   var n1  = document.getElementById('cp-new1').value;
   var n2  = document.getElementById('cp-new2').value;
   var err = document.getElementById('cp-err');
-  if(old !== SYS_PASS){ err.textContent='⚠️ Contraseña actual incorrecta'; return; }
+  if(old !== window._SYS_PASS){ err.textContent='⚠️ Contraseña actual incorrecta'; return; }
   if(n1.length < 6){ err.textContent='⚠️ La nueva contraseña debe tener al menos 6 caracteres'; return; }
   if(n1 !== n2){ err.textContent='⚠️ Las contraseñas no coinciden'; return; }
   try {
-    await setDoc(doc(db,'config','credentials'), { user: SYS_USER, pass: n1 });
-    SYS_PASS = n1;
+    await setDoc(doc(db,'config','credentials'), { user: window._SYS_USER, pass: n1 });
+    window._SYS_PASS = n1;
     document.getElementById('chpass-mod').classList.remove('open');
     toast('✅ Contraseña actualizada');
   } catch(e){
