@@ -1,4 +1,4 @@
-<!-- MAXPRINT Control Operativo v1.4 — 2026-10-10 | Fix: cierre HTML + contraseña MAXPRINT2026 + ojo login -->
+<!-- MAXPRINT Control Operativo v1.6 — 2026-10-10 | Fix: cierre HTML + contraseña MAXPRINT2026 + ojo login -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -497,7 +497,7 @@ main{padding:12px;max-width:700px;margin:0 auto;}
       <button onclick="openChangePass()" style="background:transparent;border:none;color:var(--tm);font-size:12px;cursor:pointer;text-decoration:underline;">Cambiar contraseña</button>
     </div>
   </div>
-  <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--tm);letter-spacing:1px;opacity:.6;">v1.4 — 2026-10-10</div>
+  <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--tm);letter-spacing:1px;opacity:.6;">v1.6 — 2026-10-10</div>
 </div>
 
 <!-- ════════ MODAL CAMBIAR CONTRASEÑA ════════ -->
@@ -1230,25 +1230,27 @@ window.toggleEye = function(inputId, eyeId){
 };
 
 /* Login: funciona aunque Firebase no haya cargado */
-window.doLogin = async function(){
+window.doLogin = function(){
   var u = document.getElementById('login-user').value.trim();
   var p = document.getElementById('login-pass').value;
   var err = document.getElementById('login-err');
-  /* Si Firebase aún no cargó credenciales, esperamos máx 2s */
-  if(!window._credsReady){
-    err.textContent = '⏳ Verificando...';
-    for(var i = 0; i < 20; i++){
-      await new Promise(function(r){ setTimeout(r, 100); });
-      if(window._credsReady) break;
-    }
-    err.textContent = '';
-  }
+  /* Entramos directo con la contraseña que tengamos (default o la de Firebase si ya cargó) */
   if(u === window._SYS_USER && p === window._SYS_PASS){
     err.textContent = '';
     sessionStorage.setItem('mp_sesion', 'activa');
     var bl = document.getElementById('btn-logout');
     if(bl) bl.style.display = '';
-    if(typeof _gs === 'function') _gs('home');
+    /* Usar window._gs si ya cargó el módulo, o cambiar pantalla directo */
+    if(typeof window._gs === 'function'){
+      window._gs('home');
+      if(typeof window.goEmp === 'function') window.goEmp();
+    } else {
+      /* Módulo aún no listo: cambiar pantalla manualmente */
+      document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+      var home = document.getElementById('home');
+      if(home) home.classList.add('active');
+      window.scrollTo(0,0);
+    }
   } else {
     err.textContent = '⚠️ Usuario o contraseña incorrectos';
     document.getElementById('login-pass').value = '';
@@ -1259,7 +1261,14 @@ window.doLogout = function(){
   sessionStorage.removeItem('mp_sesion');
   var bl = document.getElementById('btn-logout');
   if(bl) bl.style.display = 'none';
-  if(typeof _gs === 'function') _gs('login-screen');
+  if(typeof window._gs === 'function'){
+    window._gs('login-screen');
+  } else {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    var ls = document.getElementById('login-screen');
+    if(ls) ls.classList.add('active');
+    window.scrollTo(0,0);
+  }
 };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1578,6 +1587,7 @@ function _gs(id){
   if(el)el.classList.add('active');
   window.scrollTo(0,0);
 }
+window._gs = _gs; /* exponer al script de login */
 /* Public API */
 window.goHome       = function(){ showEmp(); };
 window.goEmpModule  = function(){
