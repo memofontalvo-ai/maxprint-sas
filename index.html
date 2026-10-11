@@ -302,6 +302,7 @@ footer{background:#05080f;border-top:1px solid var(--line);padding:56px clamp(18
 .mobile-menu.open .mob-link:nth-child(3){transition-delay:.20s}
 .mobile-menu.open .mob-link:nth-child(4){transition-delay:.26s}
 .mobile-menu.open .mob-link:nth-child(5){transition-delay:.32s}
+.mobile-menu.open .mob-link:nth-child(6){transition-delay:.38s}
 /* Número decorativo */
 .mobile-menu .mob-link::before{
   content:attr(data-num);
@@ -649,6 +650,7 @@ footer{background:#05080f;border-top:1px solid var(--line);padding:56px clamp(18
     <a href="#servicios">Galería</a>
     <a href="#experiencia">Experiencia</a>
     <a href="#contacto">Contacto</a>
+    <a href="#" onclick="openPortalClientes();return false;" style="color:#f5a623;font-weight:700;">Clientes</a>
   </div>
   <a href="#formulario" class="nav-cta">Cotizar ahora</a>
   <a href="https://memofontalvo-ai.github.io/MAXPRINT-/app.html" target="_blank" class="btn-ctrl-nav" id="btnCtrlNav">⚙ <span class="ctrl-txt">Control Operativo</span></a>
@@ -662,6 +664,7 @@ footer{background:#05080f;border-top:1px solid var(--line);padding:56px clamp(18
   <a href="#servicios" class="mob-link" data-num="03">Galería</a>
   <a href="#experiencia" class="mob-link" data-num="04">Experiencia</a>
   <a href="#contacto" class="mob-link" data-num="05">Contacto</a>
+  <a href="#" onclick="openPortalClientes();return false;" class="mob-link" data-num="06" style="color:#f5a623;">Clientes</a>
   <a href="#formulario" class="mob-cta">Cotizar ahora →</a>
 </div>
 
@@ -1041,5 +1044,228 @@ document.getElementById('yr').textContent=new Date().getFullYear();
 
 
 
+
+<!-- ════════ PORTAL CLIENTES OVERLAY ════════ -->
+<style>
+#portal-clientes-overlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:#080b14;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.portal-wrap{max-width:420px;margin:0 auto;padding:40px 20px 80px;}
+.portal-logo{text-align:center;margin-bottom:32px;}
+.portal-logo .p-brand{font-family:'Archivo',sans-serif;font-size:32px;font-weight:900;
+  color:#e83a2f;letter-spacing:3px;text-transform:uppercase;}
+.portal-logo .p-sub{font-size:11px;color:#4a5578;letter-spacing:2.5px;margin-top:4px;text-transform:uppercase;}
+.portal-card{background:#0d121f;border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:28px;}
+.portal-label{font-size:10px;color:#4a5578;font-weight:700;letter-spacing:.6px;margin-bottom:4px;text-transform:uppercase;}
+.portal-input{
+  background:#080b14;border:1px solid rgba(255,255,255,.12);border-radius:9px;
+  padding:13px 15px;color:#f4f7ff;font-size:15px;width:100%;box-sizing:border-box;
+  font-family:'Manrope',sans-serif;margin-bottom:14px;outline:none;transition:border .2s;
+}
+.portal-input:focus{border-color:#00aeef;}
+.portal-btn-main{
+  background:#00aeef;border:none;border-radius:44px;padding:14px;color:#021018;
+  font-size:15px;font-weight:800;cursor:pointer;width:100%;margin-bottom:10px;
+  font-family:'Manrope',sans-serif;letter-spacing:.02em;transition:transform .2s,box-shadow .2s;
+}
+.portal-btn-main:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,174,239,.4);}
+.portal-btn-sec{
+  background:transparent;border:1px solid rgba(255,255,255,.12);border-radius:44px;padding:10px;
+  color:#9aa6c4;font-size:13px;cursor:pointer;width:100%;font-family:'Manrope',sans-serif;
+}
+.portal-err{color:#e83a2f;font-size:12px;text-align:center;margin-bottom:10px;}
+.portal-dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.portal-salir{background:transparent;border:1px solid rgba(255,255,255,.12);border-radius:8px;
+  padding:7px 14px;color:#9aa6c4;font-size:12px;cursor:pointer;font-family:'Manrope',sans-serif;}
+.portal-search-box{background:#0d121f;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:22px;margin-bottom:18px;}
+.portal-search-row{display:flex;gap:8px;}
+.portal-input-code{
+  background:#080b14;border:1px solid rgba(255,255,255,.12);border-radius:9px;
+  padding:12px 14px;color:#f4f7ff;font-size:14px;flex:1;min-width:0;
+  font-family:'Manrope',sans-serif;outline:none;transition:border .2s;text-transform:uppercase;
+}
+.portal-input-code:focus{border-color:#00aeef;}
+.portal-btn-buscar{
+  background:#e83a2f;border:none;border-radius:9px;padding:12px 16px;
+  color:#fff;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;
+  font-family:'Manrope',sans-serif;transition:transform .2s;
+}
+.portal-btn-buscar:hover{transform:scale(1.04);}
+.portal-result{background:#0d121f;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:20px;}
+.portal-result-code{font-size:11px;color:#e83a2f;font-weight:700;letter-spacing:.5px;}
+.portal-result-name{font-size:20px;font-weight:900;font-family:'Archivo',sans-serif;color:#f4f7ff;margin:6px 0 3px;}
+.portal-result-client{font-size:13px;color:#9aa6c4;margin-bottom:14px;}
+.portal-progress-label{font-size:11px;color:#9aa6c4;margin-bottom:5px;}
+.portal-progress-bar{background:#11182a;border-radius:6px;height:10px;overflow:hidden;margin-bottom:12px;}
+.portal-progress-fill{height:10px;border-radius:6px;transition:width .6s;}
+.portal-info-row{font-size:12px;color:#9aa6c4;margin-bottom:6px;}
+.portal-info-row strong{color:#c3cde6;}
+.portal-team-title{font-size:11px;color:#4a5578;letter-spacing:.5px;text-transform:uppercase;
+  padding-top:14px;border-top:1px solid rgba(255,255,255,.07);margin-top:14px;margin-bottom:10px;}
+.portal-member{background:#11182a;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;}
+.portal-member-avatar{width:46px;height:46px;border-radius:8px;background:#161f36;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden;}
+.portal-member-avatar img{width:46px;height:46px;object-fit:cover;}
+.portal-member-name{font-size:14px;font-weight:700;color:#f4f7ff;}
+.portal-member-role{font-size:12px;color:#9aa6c4;margin-top:1px;}
+.portal-member-blood{font-size:11px;color:#f5a623;margin-top:2px;}
+.portal-member-ins{font-size:11px;color:#9aa6c4;margin-top:2px;}
+.portal-photos-title{font-size:11px;color:#4a5578;letter-spacing:.5px;text-transform:uppercase;
+  padding-top:14px;border-top:1px solid rgba(255,255,255,.07);margin-top:14px;margin-bottom:10px;}
+.portal-photos-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.portal-photos-grid img{width:100%;border-radius:8px;aspect-ratio:4/3;object-fit:cover;}
+.portal-notfound{background:#0d121f;border:1px solid rgba(255,255,255,.09);border-radius:16px;
+  padding:40px 20px;text-align:center;color:#e83a2f;font-size:14px;}
+.portal-notfound span{display:block;color:#4a5578;font-size:12px;margin-top:8px;}
+</style>
+
+<div id="portal-clientes-overlay">
+  <div class="portal-wrap">
+    <div class="portal-logo">
+      <div class="p-brand">MAXPRINT</div>
+      <div class="p-sub">Portal de Clientes</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="pc-login">
+      <div class="portal-card">
+        <div style="font-size:16px;font-weight:700;color:#f4f7ff;margin-bottom:4px;">Acceso para Clientes</div>
+        <div style="font-size:12px;color:#9aa6c4;margin-bottom:22px;">Ingrese sus credenciales para consultar sus proyectos</div>
+        <div class="portal-label">Código de cliente</div>
+        <input id="pc-cod" class="portal-input" placeholder="Ej: CLI-001" />
+        <div class="portal-label">Contraseña</div>
+        <input id="pc-pass" class="portal-input" type="password" placeholder="Contraseña" />
+        <div id="pc-err" class="portal-err" style="display:none;">Código o contraseña incorrectos</div>
+        <button class="portal-btn-main" onclick="pcLogin()">INGRESAR</button>
+        <button class="portal-btn-sec" onclick="closePortalClientes()">← Volver al sitio</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="pc-dash" style="display:none;">
+      <div class="portal-dash-header">
+        <div>
+          <div style="font-size:10px;color:#4a5578;letter-spacing:.5px;text-transform:uppercase;">Bienvenido</div>
+          <div id="pc-welcome" style="font-size:16px;font-weight:700;color:#f4f7ff;"></div>
+        </div>
+        <button class="portal-salir" onclick="pcLogout()">Cerrar sesión</button>
+      </div>
+      <div class="portal-search-box">
+        <div style="font-size:14px;font-weight:700;color:#00aeef;margin-bottom:4px;">🔍 Consulta su Proyecto</div>
+        <div style="font-size:12px;color:#9aa6c4;margin-bottom:14px;">Ingrese el código del proyecto que le proporcionó MAXPRINT</div>
+        <div class="portal-label">Código de proyecto</div>
+        <div class="portal-search-row">
+          <input id="pc-proy-code" class="portal-input-code" placeholder="MAX-2026-0307" />
+          <button class="portal-btn-buscar" onclick="pcBuscarProy()">Consultar</button>
+        </div>
+      </div>
+      <div id="pc-proy-res"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PORTAL CLIENTES ──────────────────────────────────────
+function openPortalClientes(){
+  // close mobile menu if open
+  var mm=document.getElementById('mobileMenu');
+  if(mm)mm.classList.remove('open');
+  document.getElementById('pc-cod').value='';
+  document.getElementById('pc-pass').value='';
+  document.getElementById('pc-err').style.display='none';
+  document.getElementById('pc-login').style.display='';
+  document.getElementById('pc-dash').style.display='none';
+  document.getElementById('pc-proy-res').innerHTML='';
+  document.getElementById('portal-clientes-overlay').style.display='block';
+  document.getElementById('portal-clientes-overlay').scrollTop=0;
+  document.body.style.overflow='hidden';
+}
+function closePortalClientes(){
+  document.getElementById('portal-clientes-overlay').style.display='none';
+  document.body.style.overflow='';
+}
+function pcLogin(){
+  var cod=(document.getElementById('pc-cod').value||'').trim().toUpperCase();
+  var pass=(document.getElementById('pc-pass').value||'').trim();
+  var clientes=[];
+  try{clientes=JSON.parse(localStorage.getItem('mp_clientes')||'[]');}catch(e){}
+  var cli=clientes.find(function(c){return c.codigo===cod&&c.pass===pass;});
+  if(!cli){
+    document.getElementById('pc-err').style.display='';
+    document.getElementById('pc-pass').value='';
+    setTimeout(function(){document.getElementById('pc-err').style.display='none';},3000);
+    return;
+  }
+  document.getElementById('pc-welcome').textContent=cli.nombre+' ('+cli.codigo+')';
+  document.getElementById('pc-login').style.display='none';
+  document.getElementById('pc-dash').style.display='';
+}
+function pcLogout(){
+  document.getElementById('pc-login').style.display='';
+  document.getElementById('pc-dash').style.display='none';
+  document.getElementById('pc-cod').value='';
+  document.getElementById('pc-pass').value='';
+  document.getElementById('pc-proy-res').innerHTML='';
+}
+function pcBuscarProy(){
+  var codigo=(document.getElementById('pc-proy-code').value||'').trim().toUpperCase();
+  var res=document.getElementById('pc-proy-res');
+  if(!codigo){res.innerHTML='';return;}
+  var proyectos=[];
+  try{proyectos=JSON.parse(localStorage.getItem('mp_proyectos')||'[]');}catch(e){}
+  var p=proyectos.find(function(x){return x.code===codigo;});
+  if(!p){
+    res.innerHTML='<div class="portal-notfound">No se encontró el proyecto <strong>'+codigo+'</strong><span>Verifica el código o contacta a MAXPRINT</span></div>';
+    return;
+  }
+  var ECOL={'En diseno':'#5b8af5','En produccion':'#f5a623','Listo para instalar':'#00aeef','Instalado':'#41b95f','Entregado':'#9aa6c4'};
+  var PROG={'En diseno':20,'En produccion':40,'Listo para instalar':60,'Instalado':80,'Entregado':100};
+  var ELBL={'En diseno':'En diseño','En produccion':'En producción','Listo para instalar':'Listo para instalar','Instalado':'Instalado','Entregado':'Entregado'};
+  var c=ECOL[p.estado]||'#9aa6c4',pct=PROG[p.estado]||0,elbl=ELBL[p.estado]||p.estado;
+  var html='<div class="portal-result">';
+  html+='<div class="portal-result-code">'+p.code+'</div>';
+  html+='<div class="portal-result-name">'+p.nombre+'</div>';
+  html+='<div class="portal-result-client">Cliente: '+p.cliente+'</div>';
+  if(p.tipo)html+='<div class="portal-info-row">Tipo de servicio: <strong>'+p.tipo+'</strong></div>';
+  if(p.desc)html+='<div style="font-size:13px;color:#c3cde6;margin-bottom:12px;">'+p.desc+'</div>';
+  html+='<div class="portal-progress-label">Estado: <strong style="color:'+c+';">'+elbl+'</strong></div>';
+  html+='<div class="portal-progress-bar"><div class="portal-progress-fill" style="background:'+c+';width:'+pct+'%"></div></div>';
+  if(p.fecha)html+='<div class="portal-info-row">📅 Fecha de instalación: <strong>'+p.fecha+'</strong></div>';
+  // Team
+  if(p.participantes&&p.participantes.length){
+    html+='<div class="portal-team-title">👷 Equipo de instalación</div>';
+    p.participantes.forEach(function(pt){
+      html+='<div class="portal-member">';
+      html+='<div class="portal-member-avatar">';
+      if(pt.foto)html+='<img src="'+pt.foto+'" />';
+      else html+='👤';
+      html+='</div>';
+      html+='<div style="flex:1;min-width:0;">';
+      html+='<div class="portal-member-name">'+pt.nombre+'</div>';
+      if(pt.rol||pt.tipoDoc)html+='<div class="portal-member-role">'+(pt.rol||'')+(pt.tipoDoc&&pt.numDoc?' · '+pt.tipoDoc+' '+pt.numDoc:'')+'</div>';
+      if(pt.grupoSang)html+='<div class="portal-member-blood">Grupo sanguíneo: '+pt.grupoSang+'</div>';
+      if(pt.eps||pt.arl)html+='<div class="portal-member-ins">'+(pt.eps?'EPS: '+pt.eps:'')+(pt.arl?(pt.eps?' · ':'')+'ARL: '+pt.arl:'')+'</div>';
+      html+='</div></div>';
+    });
+  }
+  // Photos
+  if(p.fotos&&p.fotos.length){
+    html+='<div class="portal-photos-title">📷 Fotos del proyecto</div>';
+    html+='<div class="portal-photos-grid">';
+    p.fotos.forEach(function(f){html+='<img src="'+f+'" />';});
+    html+='</div>';
+  }
+  html+='</div>';
+  res.innerHTML=html;
+}
+// Enter key on code input
+document.addEventListener('DOMContentLoaded',function(){
+  var ci=document.getElementById('pc-proy-code');
+  if(ci)ci.addEventListener('keydown',function(e){if(e.key==='Enter')pcBuscarProy();});
+  var pi=document.getElementById('pc-pass');
+  if(pi)pi.addEventListener('keydown',function(e){if(e.key==='Enter')pcLogin();});
+});
+</script>
 </body>
 </html>
