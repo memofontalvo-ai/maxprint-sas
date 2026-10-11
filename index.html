@@ -845,7 +845,7 @@ footer{background:#05080f;border-top:1px solid var(--line);padding:56px clamp(18
     <span><button class="btn-control" id="btnControl" onclick="window.open('https://memofontalvo-ai.github.io/MAXPRINT-/app.html','_blank')">⚙ Control Operativo</button><br><br>© <span id="yr"></span> MAXPRINT S.A.S. — Todos los derechos reservados.</span>
     <span>Diseñado con máxima tecnología.</span>
   </div>
-  <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#4a5578;letter-spacing:1px;">v1.2 — 2026-10-11</div>
+  <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#4a5578;letter-spacing:1px;">v1.3 — 2026-10-11</div>
 </footer>
 
 <a class="wa" id="waFloat" href="https://wa.me/573145813667?text=Hola%20MAXPRINT%2C%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n%20sobre%20sus%20servicios." aria-label="WhatsApp" target="_blank" rel="noopener">
@@ -1185,44 +1185,35 @@ function closePortalClientes(){
   document.getElementById('portal-clientes-overlay').style.display='none';
   document.body.style.overflow='';
 }
-/* ══ Firebase SDK (módulo ESM) para Portal Clientes ══ */
-var _mpdb = null;
-(async function(){
-  try{
-    const {initializeApp,getApps} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const {getFirestore,doc,getDoc,collection,getDocs} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const _cfg={apiKey:"AIzaSyC_89LSZSiuKAqIp_JUnaRRuMwALGCt_8o",authDomain:"tareas-empresa-2911f.firebaseapp.com",projectId:"tareas-empresa-2911f",storageBucket:"tareas-empresa-2911f.firebasestorage.app",messagingSenderId:"686763477486",appId:"1:686763477486:web:b65ee267900d9f49cf3a7f"};
-    const _app=getApps().length?getApps()[0]:initializeApp(_cfg);
-    _mpdb={db:getFirestore(_app),doc,getDoc,collection,getDocs};
-  }catch(e){console.warn('Firebase no disponible:',e);}
-})();
-
-async function pcLogin(){
+/* Portal Clientes — funciones expuestas globalmente */
+function pcLogin(){
   var cod=(document.getElementById('pc-cod').value||'').trim().toUpperCase();
   var pass=(document.getElementById('pc-pass').value||'').trim();
   if(!cod||!pass){return;}
-  // Mostrar indicador de carga
-  document.getElementById('pc-err').style.display='none';
-  var btnLogin=document.querySelector('#pc-login button[onclick]');
-  if(btnLogin){btnLogin.textContent='Verificando...';}
-  var cli=null;
-  // Intentar Firebase primero
-  if(_mpdb){
-    try{
-      var snap=await _mpdb.getDoc(_mpdb.doc(_mpdb.db,'mp_clientes',cod));
-      if(snap.exists()){var d=snap.data();if(d.pass===pass)cli={codigo:d.codigo,nombre:d.nombre};}
-    }catch(e){console.warn('Firebase login error:',e);}
-  }
-  if(btnLogin){btnLogin.textContent='INGRESAR';}
-  if(!cli){
-    document.getElementById('pc-err').style.display='';
+  var btnEl=document.getElementById('pc-btn-login');
+  if(btnEl){btnEl.textContent='Verificando...';btnEl.disabled=true;}
+  var errEl=document.getElementById('pc-err');
+  if(errEl)errEl.style.display='none';
+  // Usar Firebase global expuesto por el módulo
+  if(window._mpLogin){
+    window._mpLogin(cod,pass,function(cli){
+      if(btnEl){btnEl.textContent='INGRESAR';btnEl.disabled=false;}
+      if(!cli){
+        if(errEl)errEl.style.display='';
+        document.getElementById('pc-pass').value='';
+        setTimeout(function(){if(errEl)errEl.style.display='none';},3000);
+        return;
+      }
+      document.getElementById('pc-welcome').textContent=cli.nombre+' ('+cli.codigo+')';
+      document.getElementById('pc-login').style.display='none';
+      document.getElementById('pc-dash').style.display='';
+    });
+  } else {
+    if(btnEl){btnEl.textContent='INGRESAR';btnEl.disabled=false;}
+    if(errEl){errEl.style.display='';setTimeout(function(){errEl.style.display='none';},4000);}
+    document.getElementById('pc-err').textContent='Sin conexión. Intenta de nuevo.';
     document.getElementById('pc-pass').value='';
-    setTimeout(function(){document.getElementById('pc-err').style.display='none';},3000);
-    return;
   }
-  document.getElementById('pc-welcome').textContent=cli.nombre+' ('+cli.codigo+')';
-  document.getElementById('pc-login').style.display='none';
-  document.getElementById('pc-dash').style.display='';
 }
 function pcLogout(){
   document.getElementById('pc-login').style.display='';
@@ -1231,57 +1222,49 @@ function pcLogout(){
   document.getElementById('pc-pass').value='';
   document.getElementById('pc-proy-res').innerHTML='';
 }
-async function pcBuscarProy(){
+function pcBuscarProy(){
   var codigo=(document.getElementById('pc-proy-code').value||'').trim().toUpperCase();
   var res=document.getElementById('pc-proy-res');
   if(!codigo){res.innerHTML='';return;}
-  res.innerHTML='<div style="text-align:center;padding:24px;color:#9aa6c4;font-size:14px;">🔍 Consultando...</div>';
-  var p=null;
-  // Buscar en Firebase
-  if(_mpdb){
-    try{
-      var snap=await _mpdb.getDoc(_mpdb.doc(_mpdb.db,'mp_proyectos',codigo));
-      if(snap.exists()){p=snap.data();}
-    }catch(e){console.warn('Firebase proy error:',e);}
-  }
-  if(!p){
-    res.innerHTML='<div class="portal-notfound">No se encontró el proyecto <strong>'+codigo+'</strong><span>Verifica el código o contacta a MAXPRINT</span></div>';
-    return;
-  }
-  var ECOL={'En diseno':'#5b8af5','En produccion':'#f5a623','Listo para instalar':'#00aeef','Instalado':'#41b95f','Entregado':'#9aa6c4'};
-  var PROG={'En diseno':20,'En produccion':40,'Listo para instalar':60,'Instalado':80,'Entregado':100};
-  var ELBL={'En diseno':'En diseño','En produccion':'En producción','Listo para instalar':'Listo para instalar','Instalado':'Instalado','Entregado':'Entregado'};
-  var c=ECOL[p.estado]||'#9aa6c4',pct=PROG[p.estado]||0,elbl=ELBL[p.estado]||p.estado;
-  var html='<div class="portal-result">';
-  html+='<div class="portal-result-code">'+p.code+'</div>';
-  html+='<div class="portal-result-name">'+p.nombre+'</div>';
-  html+='<div class="portal-result-client">Cliente: '+p.cliente+'</div>';
-  if(p.tipo)html+='<div class="portal-info-row">Tipo de servicio: <strong>'+p.tipo+'</strong></div>';
-  if(p.desc)html+='<div style="font-size:13px;color:#c3cde6;margin-bottom:12px;">'+p.desc+'</div>';
-  html+='<div class="portal-progress-label">Estado: <strong style="color:'+c+';">'+elbl+'</strong></div>';
-  html+='<div class="portal-progress-bar"><div class="portal-progress-fill" style="background:'+c+';width:'+pct+'%"></div></div>';
-  if(p.fecha)html+='<div class="portal-info-row">📅 Fecha de instalación: <strong>'+p.fecha+'</strong></div>';
-  if(p.participantes&&p.participantes.length){
-    html+='<div class="portal-team-title">👷 Equipo de instalación</div>';
-    p.participantes.forEach(function(pt){
-      html+='<div class="portal-member">';
-      html+='<div class="portal-member-avatar">👤</div>';
-      html+='<div style="flex:1;min-width:0;">';
-      html+='<div class="portal-member-name">'+pt.nombre+'</div>';
-      if(pt.rol||pt.tipoDoc)html+='<div class="portal-member-role">'+(pt.rol||'')+(pt.tipoDoc&&pt.numDoc?' · '+pt.tipoDoc+' '+pt.numDoc:'')+'</div>';
-      if(pt.grupoSang)html+='<div class="portal-member-blood">Grupo sanguíneo: '+pt.grupoSang+'</div>';
-      if(pt.eps||pt.arl)html+='<div class="portal-member-ins">'+(pt.eps?'EPS: '+pt.eps:'')+(pt.arl?(pt.eps?' · ':'')+'ARL: '+pt.arl:'')+'</div>';
-      html+='</div></div>';
+  res.innerHTML='<div style="text-align:center;padding:32px;color:#9aa6c4;font-size:14px;">🔍 Consultando...</div>';
+  if(window._mpBuscarProy){
+    window._mpBuscarProy(codigo,function(p){
+      if(!p){
+        res.innerHTML='<div class="portal-notfound">No se encontró <strong>'+codigo+'</strong><span>Verifica el código o contacta a MAXPRINT</span></div>';
+        return;
+      }
+      var ECOL={'En diseno':'#5b8af5','En produccion':'#f5a623','Listo para instalar':'#00aeef','Instalado':'#41b95f','Entregado':'#9aa6c4'};
+      var PROG={'En diseno':20,'En produccion':40,'Listo para instalar':60,'Instalado':80,'Entregado':100};
+      var ELBL={'En diseno':'En diseño','En produccion':'En producción','Listo para instalar':'Listo para instalar','Instalado':'Instalado','Entregado':'Entregado'};
+      var col=ECOL[p.estado]||'#9aa6c4',pct=PROG[p.estado]||0,elbl=ELBL[p.estado]||p.estado;
+      var html='<div class="portal-result">';
+      html+='<div class="portal-result-code">'+p.code+'</div>';
+      html+='<div class="portal-result-name">'+p.nombre+'</div>';
+      html+='<div class="portal-result-client">Cliente: '+p.cliente+'</div>';
+      if(p.tipo)html+='<div class="portal-info-row">Tipo: <strong>'+p.tipo+'</strong></div>';
+      if(p.desc)html+='<div style="font-size:13px;color:#c3cde6;margin-bottom:12px;">'+p.desc+'</div>';
+      html+='<div class="portal-progress-label">Estado: <strong style="color:'+col+';">'+elbl+'</strong></div>';
+      html+='<div class="portal-progress-bar"><div class="portal-progress-fill" style="background:'+col+';width:'+pct+'%"></div></div>';
+      if(p.fecha)html+='<div class="portal-info-row">📅 Instalación: <strong>'+p.fecha+'</strong></div>';
+      if(p.participantes&&p.participantes.length){
+        html+='<div class="portal-team-title">👷 Equipo de instalación</div>';
+        p.participantes.forEach(function(pt){
+          html+='<div class="portal-member"><div class="portal-member-avatar">👤</div><div style="flex:1;min-width:0;">';
+          html+='<div class="portal-member-name">'+pt.nombre+'</div>';
+          if(pt.rol)html+='<div class="portal-member-role">'+pt.rol+(pt.tipoDoc&&pt.numDoc?' · '+pt.tipoDoc+' '+pt.numDoc:'')+'</div>';
+          if(pt.grupoSang)html+='<div class="portal-member-blood">Sangre: '+pt.grupoSang+'</div>';
+          if(pt.eps||pt.arl)html+='<div class="portal-member-ins">'+(pt.eps?'EPS: '+pt.eps:'')+(pt.arl?(pt.eps?' · ':'')+'ARL: '+pt.arl:'')+'</div>';
+          html+='</div></div>';
+        });
+      }
+      if(p._fotosCount>0)html+='<div class="portal-photos-title">📷 '+p._fotosCount+' foto(s) registrada(s)</div>';
+      html+='</div>';
+      res.innerHTML=html;
     });
+  } else {
+    res.innerHTML='<div class="portal-notfound">Sin conexión. Intenta de nuevo.<span>Verifica tu red e intenta otra vez</span></div>';
   }
-  if(p._fotosCount&&p._fotosCount>0){
-    html+='<div class="portal-photos-title">📷 Fotos del proyecto</div>';
-    html+='<div style="font-size:12px;color:#9aa6c4;padding:8px 0;">'+p._fotosCount+' foto(s) registrada(s). Para ver las fotos contacta a MAXPRINT.</div>';
-  }
-  html+='</div>';
-  res.innerHTML=html;
 }
-// Tecla Enter en los campos
 document.addEventListener('DOMContentLoaded',function(){
   var ci=document.getElementById('pc-proy-code');
   if(ci)ci.addEventListener('keydown',function(e){if(e.key==='Enter')pcBuscarProy();});
@@ -1289,6 +1272,24 @@ document.addEventListener('DOMContentLoaded',function(){
   if(pi)pi.addEventListener('keydown',function(e){if(e.key==='Enter')pcLogin();});
 });
 </script>
-<div style="position:fixed;bottom:10px;right:12px;font-size:10px;color:rgba(255,255,255,.15);pointer-events:none;z-index:1;font-family:system-ui,sans-serif;letter-spacing:.5px;">maxprint.co v1.2</div>
+<script type="module">
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+var _cfg={apiKey:"AIzaSyC_89LSZSiuKAqIp_JUnaRRuMwALGCt_8o",authDomain:"tareas-empresa-2911f.firebaseapp.com",projectId:"tareas-empresa-2911f",storageBucket:"tareas-empresa-2911f.firebasestorage.app",messagingSenderId:"686763477486",appId:"1:686763477486:web:b65ee267900d9f49cf3a7f"};
+var _app=getApps().length?getApps()[0]:initializeApp(_cfg);
+var _db=getFirestore(_app);
+window._mpLogin=function(cod,pass,cb){
+  getDoc(doc(_db,'mp_clientes',cod)).then(function(snap){
+    if(snap.exists()){var d=snap.data();if(d.pass===pass){cb({codigo:d.codigo,nombre:d.nombre});return;}}
+    cb(null);
+  }).catch(function(){cb(null);});
+};
+window._mpBuscarProy=function(codigo,cb){
+  getDoc(doc(_db,'mp_proyectos',codigo)).then(function(snap){
+    if(snap.exists()){cb(snap.data());}else{cb(null);}
+  }).catch(function(){cb(null);});
+};
+</script>
+<div style="position:fixed;bottom:10px;right:12px;font-size:10px;color:rgba(255,255,255,.15);pointer-events:none;z-index:1;font-family:system-ui,sans-serif;letter-spacing:.5px;">maxprint.co v1.3</div>
 </body>
 </html>
