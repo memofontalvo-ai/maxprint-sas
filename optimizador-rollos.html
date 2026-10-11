@@ -1,0 +1,3413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optimizador de Rollo — Nesting para Plotter</title>
+<style>
+  :root{
+    --bg:#000000;
+    --panel:#0d0f10;
+    --panel-2:#15181a;
+    --line:#26292c;
+    --paper:#ede6d6;
+    --paper-dark:#ddd3bc;
+    --brand:#f5a623;        /* naranja MAXPRINT */
+    --accent:#c3e600;       /* lima del módulo Optimizador */
+    --cyan:#3aa8e0;
+    --magenta:#e0348b;
+    --yellow:#f0c000;
+    --key:#0d0d0d;
+    --text:#f2efe9;
+    --text-dim:#8b8f93;
+    --danger:#ff5c5c;
+    --good:#3ddc84;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding:18px 14px 60px;
+    min-height:100vh;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+
+  /* ---- Cabecera estilo MAXPRINT ---- */
+  header{margin-bottom:26px;text-align:center;}
+  /* El logo va en el encabezado de todos los módulos, para que el programa se vea
+     como una sola pieza y no como pantallas sueltas. */
+  .logo-maxprint{
+    display:block;
+    width:250px;
+    max-width:66%;
+    height:auto;
+    margin:0 auto 14px;
+  }
+  .logo-print{ width:120px; height:auto; }
+  @media print{
+    .logo-print{ width:34mm; }
+  }
+  .brandbar{
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:12px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--brand);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding-bottom:12px;
+    border-bottom:1px solid rgba(245,166,35,.35);
+    margin-bottom:20px;
+  }
+  h1{
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight:800;
+    font-size:30px;
+    margin:0 0 8px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    line-height:1.1;
+  }
+  .tagline{
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:11px;
+    letter-spacing:.26em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin:0 0 16px;
+  }
+  .rule{height:1px;background:var(--line);margin:16px 0;}
+  .section-label{
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:11.5px;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    text-align:center;
+    margin:0 0 16px;
+  }
+  .sub{color:var(--text-dim);font-size:13.5px;line-height:1.5;max-width:52ch;}
+  header .sub{margin:0 auto;}
+
+  /* ---- Tarjetas de módulo ---- */
+  .modulo-card{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    width:100%;
+    text-align:left;
+    padding:20px 18px;
+    border-radius:14px;
+    cursor:pointer;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition:transform .12s ease;
+  }
+  .modulo-card:active{transform:scale(.99);}
+  .modulo-card .ico{font-size:34px;line-height:1;flex-shrink:0;}
+  .modulo-card .mtitle{
+    font-weight:800;font-size:19px;letter-spacing:.09em;text-transform:uppercase;line-height:1.15;
+  }
+  .modulo-card .mdesc{display:block;font-size:13px;color:var(--text-dim);margin-top:6px;line-height:1.45;}
+  .badge{
+    display:inline-block;margin-top:11px;
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+    padding:4px 9px;border-radius:5px;
+  }
+  .chev{margin-left:auto;color:var(--text-dim);font-size:20px;flex-shrink:0;}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .panel h2{
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:.11em;
+    text-transform:uppercase;
+    margin:0 0 12px;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel h2 .tag{
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:10px;
+    color:#000;
+    background:var(--accent);
+    padding:3px 7px;
+    border-radius:5px;
+    font-weight:700;
+    letter-spacing:.04em;
+  }
+
+  .row-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  label{font-size:11px;color:var(--text-dim);font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;letter-spacing:.03em;}
+  input[type=text], input[type=number]{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:6px;
+    padding:9px 10px;
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:14px;
+    width:100%;
+  }
+  input:focus{outline:2px solid var(--cyan);outline-offset:1px;}
+
+  .presets{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .preset-btn{
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:12px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .preset-btn:hover{border-color:var(--cyan);color:var(--text);}
+  .preset-btn:focus-visible{outline:2px solid var(--cyan);}
+
+  .piece-row{
+    display:grid;
+    grid-template-columns: 76px 1fr 60px 60px 42px 28px;
+    gap:6px;
+    align-items:end;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .piece-row:last-child{border-bottom:none;}
+  .piece-row label{margin-bottom:0;}
+  .del-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--danger);
+    border-radius:6px;
+    height:36px;
+    cursor:pointer;
+    font-size:15px;
+    line-height:1;
+  }
+  .del-btn:hover{border-color:var(--danger);}
+
+  .add-btn{
+    margin-top:12px;
+    width:100%;
+    background:transparent;
+    border:1px dashed var(--line);
+    color:var(--text-dim);
+    padding:10px;
+    border-radius:8px;
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:12.5px;
+    cursor:pointer;
+  }
+  .add-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+  .calc-btn{
+    width:100%;
+    background:var(--accent);
+    color:#0a0a0a;
+    border:none;
+    padding:14px;
+    border-radius:8px;
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    letter-spacing:.01em;
+  }
+  .calc-btn:hover{filter:brightness(1.08);}
+  .calc-btn:focus-visible{outline:2px solid var(--yellow);outline-offset:2px;}
+
+  .rot-toggle{
+    display:flex;align-items:center;gap:8px;
+    font-size:13px;color:var(--text-dim);
+    margin-top:2px;
+  }
+
+  /* Results */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 10px;
+    text-align:left;
+  }
+  .stat .num{
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size:20px;
+    font-weight:700;
+    color:var(--accent);
+    display:block;
+    line-height:1.1;
+  }
+  .stat .lbl{
+    font-size:10.5px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    margin-top:4px;
+    display:block;
+  }
+  .stat.warn .num{color:var(--danger);}
+
+  .viz-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:14px;
+  }
+  .viz-scroll{
+    overflow-x:auto;
+    background:var(--key);
+    border-radius:8px;
+    padding:14px 10px;
+    display:flex;
+    justify-content:center;
+  }
+  .unplaced-box{
+    margin-top:12px;
+    padding:10px 12px;
+    background:rgba(255,92,92,0.08);
+    border:1px solid rgba(255,92,92,0.4);
+    border-radius:8px;
+    font-size:12.5px;
+    color:var(--danger);
+    line-height:1.5;
+  }
+  .legend{
+    display:flex;flex-wrap:wrap;gap:10px;
+    margin-top:12px;
+    font-size:11.5px;
+    color:var(--text-dim);
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .swatch{width:10px;height:10px;border-radius:2px;display:inline-block;}
+
+  footer{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:11px;
+    font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    margin-top:26px;
+    letter-spacing:.03em;
+  }
+  #printArea{ display:none; }
+  @media print{
+    html, body{ background:#fff !important; }
+    .wrap > *{ display:none !important; }
+    .wrap > #printArea{
+      display:block !important;
+      background:#fff;
+      color:#111;
+    }
+    .print-page{
+      width:100%;
+      overflow:hidden; /* nunca deja que se desborde a una página extra */
+      background:#fff;
+    }
+    .print-page *{ color:#111 !important; }
+    /* sin esto el navegador descarta los fondos al imprimir y se perderia el
+       resaltado de los avisos en L y en U */
+    .print-page, .print-page *{
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    @page{ size: letter; margin: 10mm; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <img class="logo-maxprint" id="logoMaxprint" alt="MAXPRINT — Máxima tecnología para tu marca" src="data:image/png;base64,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">
+    <div class="brandbar">⚙ Control Maxprint</div>
+    <h1>Optimizador de Rollos</h1>
+    <p class="tagline">Nesting · Plotter · Publicidad</p>
+    <p class="sub" id="headerSub">Organiza los avisos por medidas y arma los montajes para impresión.</p>
+  </header>
+
+  <!-- PANTALLA DE ENTRADA: elegir módulo -->
+  <div id="homeScreen">
+    <!-- Regresa al menú principal de MAXPRINT (el hub con todos los módulos de la
+         empresa). Es un enlace relativo a la carpeta raíz del sitio, así que sigue
+         funcionando aunque cambie el dominio o el hosting. -->
+    <a href="app.html" class="add-btn" style="display:block;text-align:center;text-decoration:none;margin-bottom:18px;border-style:solid;border-color:rgba(245,166,35,.45);color:var(--brand);letter-spacing:.08em;text-transform:uppercase;font-size:11.5px;">← Volver al menú MAXPRINT</a>
+    <div class="rule"></div>
+    <p class="section-label">Seleccioná tu módulo</p>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <button class="modulo-card modulo-btn" data-vista="designer"
+        style="border-color:rgba(58,168,224,.55);background:linear-gradient(180deg, rgba(58,168,224,.10), rgba(13,15,16,1));">
+        <span class="ico">🎨</span>
+        <span style="flex:1;">
+          <span class="mtitle" style="color:var(--cyan);display:block;">Módulo Diseñador</span>
+          <span class="mdesc">Cargar planilla · Organizar por rangos · Armar montajes</span>
+          <span class="badge" style="background:rgba(58,168,224,.16);color:var(--cyan);">Acceso libre</span>
+        </span>
+        <span class="chev">›</span>
+      </button>
+
+      <button class="modulo-card modulo-btn" data-vista="printer"
+        style="border-color:rgba(224,52,139,.55);background:linear-gradient(180deg, rgba(224,52,139,.10), rgba(13,15,16,1));">
+        <span class="ico">🖨️</span>
+        <span style="flex:1;">
+          <span class="mtitle" style="color:var(--magenta);display:block;">Módulo Impresor</span>
+          <span class="mdesc">Montajes listos · Plano de corte · Lista de avisos</span>
+          <span class="badge" id="homeMontajeCount" style="background:rgba(224,52,139,.16);color:var(--magenta);"></span>
+        </span>
+        <span class="chev">›</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- VISTA IMPRESOR -->
+  <div id="printerView" style="display:none;">
+    <button class="add-btn volver-btn" style="margin-bottom:16px;border-style:solid;border-color:var(--line);color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-size:11.5px;">← Volver a módulos</button>
+    <div class="row-inline" style="margin-bottom:12px;">
+      <button class="preset-btn" id="refreshPrinterBtn" style="border-color:var(--magenta);color:var(--magenta);">↻ actualizar montajes</button>
+    </div>
+    <div id="printerList"></div>
+  </div>
+
+  <!-- VISTA DISEÑADOR -->
+  <div id="designerView" style="display:none;">
+  <button class="add-btn volver-btn" style="margin-bottom:16px;border-style:solid;border-color:var(--line);color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-size:11.5px;">← Volver a módulos</button>
+
+  <!-- BARRA DE PROYECTO: lo primero que se ve al entrar, porque abrir un proyecto
+       guardado o empezar de cero es la decisión con la que arranca el trabajo. -->
+  <div class="panel" style="border-color:var(--good);margin-bottom:16px;">
+    <div id="estadoNube" class="sub" style="margin-bottom:10px;">conectando a la base de datos…</div>
+    <div class="row-inline">
+      <button class="preset-btn" id="verProyectosBtn" style="border-color:var(--cyan);color:var(--cyan);">📂 abrir proyecto guardado</button>
+      <button class="preset-btn" id="nuevoProyectoBtn" style="border-color:var(--danger);color:var(--danger);">🔄 empezar de cero</button>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:var(--magenta);">
+    <h2><span class="tag" style="background:var(--magenta);">01</span> Máquina de impresión</h2>
+    <p class="sub" style="margin-bottom:10px;">El ancho máximo que soporta tu plotter. Este es el límite real: ningún rollo más ancho que esto se puede usar, sin importar lo que tengas en bodega.</p>
+    <div class="field">
+      <label for="machineWidth">ANCHO MÁXIMO DE LA MÁQUINA (CM)</label>
+      <input type="number" id="machineWidth" value="320" min="1" step="1">
+    </div>
+    <div class="presets">
+      <button class="preset-btn machine-btn" data-m="100">1.00 m</button>
+      <button class="preset-btn machine-btn" data-m="120">1.20 m</button>
+      <button class="preset-btn machine-btn" data-m="160">1.60 m</button>
+      <button class="preset-btn machine-btn" data-m="220">2.20 m</button>
+      <button class="preset-btn machine-btn" data-m="320">3.20 m</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="tag">02</span> Ancho del rollo</h2>
+    <div id="rollWidthFields" style="display:none;">
+      <p class="sub" style="margin-bottom:10px;">Solo se usa en los modos "un solo rollo" o "comparar formatos" (paso 05). En modo agrupar el programa te sugiere los anchos, no hace falta que pongas uno aquí.</p>
+      <div class="field">
+        <label for="rollWidth">ANCHO (CM)</label>
+        <input type="number" id="rollWidth" value="150" min="1" step="1">
+      </div>
+      <div class="presets">
+        <button class="preset-btn" data-w="100">1.00 m</button>
+        <button class="preset-btn" data-w="120">1.20 m</button>
+        <button class="preset-btn" data-w="150">1.50 m</button>
+        <button class="preset-btn" data-w="160">1.60 m</button>
+        <button class="preset-btn" data-w="320">3.20 m</button>
+      </div>
+    </div>
+    <div class="rot-toggle">
+      <input type="checkbox" id="allowRotation" checked style="width:16px;height:16px;">
+      <label for="allowRotation" style="margin:0;">Permitir rotar piezas 90° si ahorra material</label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="tag">03</span> Sangrado para tensionado</h2>
+    <p class="sub" style="margin-bottom:10px;">Margen extra que se agrega en los 4 lados de cada lona para poder tensionarla en el bastidor. Se suma a la medida real antes de calcular el acomodo.</p>
+    <div class="field">
+      <label for="sangrado">SANGRADO POR LADO (CM)</label>
+      <input type="number" id="sangrado" value="5" min="0" step="0.5">
+    </div>
+    <div class="presets">
+      <button class="preset-btn sangrado-btn" data-s="0">0 cm</button>
+      <button class="preset-btn sangrado-btn" data-s="4">4 cm</button>
+      <button class="preset-btn sangrado-btn" data-s="5">5 cm</button>
+      <button class="preset-btn sangrado-btn" data-s="10">10 cm</button>
+    </div>
+
+  </div>
+
+  <div class="panel" style="border-color:var(--cyan);">
+    <h2><span class="tag">04</span> Cómo organizar</h2>
+    <p class="sub" style="margin-bottom:10px;">Elige con qué criterio quieres armar los grupos:</p>
+    <input type="hidden" id="organizarPor" value="rangos">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <button class="modo-btn" data-modo="rangos" style="text-align:left;padding:12px 14px;border-radius:8px;cursor:pointer;background:var(--panel-2);border:2px solid var(--cyan);color:var(--text);font-family:-apple-system,sans-serif;">
+        <div style="font-weight:600;font-size:14px;">A · Que el sistema sugiera los anchos</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:3px;">Busca los anchos ideales de menor desperdicio, sin importar lo que tengas en bodega.</div>
+      </button>
+      <button class="modo-btn" data-modo="rollos" style="text-align:left;padding:12px 14px;border-radius:8px;cursor:pointer;background:var(--panel-2);border:2px solid var(--line);color:var(--text);font-family:-apple-system,sans-serif;">
+        <div style="font-weight:600;font-size:14px;">B · Usar los rollos que YO tengo en bodega</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:3px;">Acomoda los avisos en tus anchos reales y deja por fuera los que no lleguen al aprovechamiento mínimo.</div>
+      </button>
+    </div>
+
+    <div id="opcionRangos">
+      <p class="sub" style="margin-bottom:10px;">¿En cuántos rangos quieres que se agrupen los avisos por medidas similares?</p>
+      <div class="field">
+        <label for="numRanges">NÚMERO DE RANGOS</label>
+        <input type="number" id="numRanges" value="4" min="1" max="12" step="1">
+      </div>
+      <div class="presets">
+        <button class="preset-btn rango-btn" data-r="3">3</button>
+        <button class="preset-btn rango-btn" data-r="4">4</button>
+        <button class="preset-btn rango-btn" data-r="6">6</button>
+        <button class="preset-btn rango-btn" data-r="8">8</button>
+        <button class="preset-btn rango-btn" data-r="10">10</button>
+      </div>
+    </div>
+
+    <div id="opcionRollos" style="display:none;">
+      <p class="sub" style="margin-bottom:10px;">El programa te dirá qué avisos se pueden tirar en cada rollo con el mínimo desperdicio, y te dejará por fuera los que no lleguen al aprovechamiento mínimo.</p>
+      <div class="field">
+        <label for="minAprov">APROVECHAMIENTO MÍNIMO ACEPTABLE (%)</label>
+        <input type="number" id="minAprov" value="90" min="1" max="100" step="1">
+      </div>
+      <div class="presets">
+        <button class="preset-btn aprov-btn" data-a="80">80%</button>
+        <button class="preset-btn aprov-btn" data-a="85">85%</button>
+        <button class="preset-btn aprov-btn" data-a="90">90%</button>
+        <button class="preset-btn aprov-btn" data-a="95">95%</button>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">
+      <p class="sub" style="margin-bottom:8px;">¿Qué anchos de material tienes en bodega? (se usan en el modo "por mis rollos", y sirven de referencia en el modo por rangos)</p>
+      <div class="field">
+        <label for="rollosDisponibles">ANCHOS DISPONIBLES (CM, separados por coma)</label>
+        <input type="text" id="rollosDisponibles" value="100, 120, 160">
+      </div>
+      <div class="presets">
+        <button class="preset-btn stock-add-btn" data-w="50">+50</button>
+        <button class="preset-btn stock-add-btn" data-w="100">+100</button>
+        <button class="preset-btn stock-add-btn" data-w="120">+120</button>
+        <button class="preset-btn stock-add-btn" data-w="160">+160</button>
+        <button class="preset-btn stock-add-btn" data-w="320">+320</button>
+        <button class="preset-btn" id="stockClearBtn">limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="tag">05</span> Archivos a tirar</h2>
+    <button class="add-btn" id="togglePieceList" style="margin-bottom:10px;margin-top:0;display:flex;justify-content:space-between;align-items:center;">
+      <span id="pieceCountLabel">0 archivos cargados</span>
+      <span id="pieceListArrow">ver lista ▸</span>
+    </button>
+    <div id="pieceListWrap" style="display:none;">
+      <div id="pieceList"></div>
+      <button class="add-btn" id="addPiece">+ agregar medida</button>
+    </div>
+
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
+      <label style="display:block;margin-bottom:8px;">CARGAR ARCHIVO (.XLSX o .CSV)</label>
+      <p class="sub" style="margin-bottom:8px;">Sube tu planilla y el programa reemplaza la lista automáticamente. Toma los dos últimos números de cada fila como ancho y alto, y el resto del texto como identificador del archivo — así que puedes subir la planilla tal cual la manejas, sin acomodarla primero.</p>
+      <label for="fileUpload" class="add-btn" style="display:block;text-align:center;cursor:pointer;">+ subir planilla</label>
+      <input type="file" id="fileUpload" accept=".xlsx,.csv" style="display:none;">
+    </div>
+
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
+      <label style="display:block;margin-bottom:8px;">O PEGAR FILAS COPIADAS</label>
+      <p class="sub" style="margin-bottom:8px;">Selecciona en tu Excel las columnas con el nombre/código y las medidas, cópialas (Ctrl+C) y pégalas aquí. Se agregan a la lista de arriba sin borrar lo que ya tienes.</p>
+      <textarea id="importText" rows="4" placeholder="pega aquí las filas copiadas de Excel..." style="background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:9px 10px;font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;font-size:12.5px;width:100%;resize:vertical;"></textarea>
+      <button class="add-btn" id="importBtn" style="margin-top:8px;">Importar filas pegadas</button>
+      <div id="importMsg" style="font-size:12px;color:var(--text-dim);margin-top:6px;"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="tag">06</span> Formato de rollo</h2>
+    <p class="sub" style="margin-bottom:10px;">Elige si calculas con un solo ancho, si comparas cuál ancho conviene para todo el lote, o si dejas que el programa agrupe primero por alto (medidas más estándar y parecidas) y luego te diga qué rollo de tu bodega le queda a cada grupo.</p>
+    <div class="field" style="margin-bottom:10px;">
+      <label for="modeSelect">MODO</label>
+      <select id="modeSelect" style="background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:9px 10px;font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;font-size:13px;width:100%;">
+        <option value="single">Solo mi ancho de rollo (arriba)</option>
+        <option value="compare">Comparar formatos para todo el lote</option>
+        <option value="groups" selected>Agrupar por rangos de alto + mi bodega</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label for="compareWidths">ANCHOS EN BODEGA (CM, separados por coma)</label>
+      <input type="text" id="compareWidths" value="100, 120, 320">
+    </div>
+    <div class="field">
+      <label for="stockMeters">METROS DISPONIBLES POR ANCHO (mismo orden — deja vacío = sin límite)</label>
+      <input type="text" id="stockMeters" placeholder="ej. 40, , 25 (deja vacío el que no quieras limitar)">
+    </div>
+  </div>
+
+  <button class="calc-btn" id="calcBtn">Optimizar acomodo</button>
+
+  <div id="results" style="margin-top:18px;"></div>
+  <div id="compareResults" style="margin-top:14px;"></div>
+
+  <div class="panel" id="montajesPanel" style="margin-top:18px;border-color:var(--magenta);">
+    <h2><span class="tag" style="background:var(--magenta);">07</span> Montajes para impresión</h2>
+    <div class="field" style="margin-bottom:12px;">
+      <label for="proyectoNombre">NOMBRE DEL PROYECTO</label>
+      <input type="text" id="proyectoNombre" placeholder="ej. Cambio de lonas Supergiros Atlántico">
+    </div>
+    <div class="row-inline" style="margin-bottom:6px;">
+      <button class="preset-btn" id="guardarProyectoBtn" style="border-color:var(--good);color:var(--good);">💾 guardar como proyecto</button>
+    </div>
+    <div id="proyectoGuardadoInfo" class="sub" style="margin-bottom:10px;"></div>
+    <p class="sub" style="margin-bottom:10px;">Marca los avisos en las listas de arriba — puedes entrar a un rango, chulear los que quieras, luego entrar a otro rango y seguir chuleando. Al agregarlos al montaje se descuentan de los rangos para que no los repitas.</p>
+    <div id="seleccionBar" style="display:none;margin-bottom:12px;padding:10px 12px;background:var(--panel-2);border:1px solid var(--magenta);border-radius:8px;">
+      <div style="font-size:13px;color:var(--text);margin-bottom:8px;"><strong id="selCount">0</strong> aviso(s) seleccionado(s)</div>
+      <div class="row-inline">
+        <select id="montajeDestino" style="flex:1;min-width:140px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:12.5px;"></select>
+        <button class="preset-btn" id="addToMontajeBtn" style="border-color:var(--magenta);color:var(--magenta);">agregar</button>
+        <button class="preset-btn" id="clearSelBtn">quitar selección</button>
+      </div>
+    </div>
+    <button class="add-btn" id="newMontajeBtn" style="border-color:var(--magenta);color:var(--magenta);">+ nuevo montaje</button>
+    <div id="montajesList" style="margin-top:12px;"></div>
+  </div>
+  </div><!-- /designerView -->
+
+  <div id="printArea"></div>
+
+  <!-- MODAL: proyectos guardados -->
+
+<!-- ============ CONEXIÓN A LA BASE DE DATOS (Firestore) ============
+     Se usa la MISMA base de datos del programa "Control de Tareas" (proyecto
+     tareas-empresa-2911f), en una colección aparte llamada "optimizador_proyectos".
+     Así los proyectos quedan guardados en la nube y se ven desde cualquier equipo
+     (computador, celular), no solo en el navegador donde se crearon.
+     Si no hay internet o falla la conexión, el programa sigue funcionando y guarda
+     localmente, para no dejar al usuario bloqueado. -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs, setDoc, deleteDoc, doc, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const cfg = {
+  apiKey:"AIzaSyC_89LSZSiuKAqIp_JUnaRRuMwALGCt_8o",
+  authDomain:"tareas-empresa-2911f.firebaseapp.com",
+  projectId:"tareas-empresa-2911f",
+  storageBucket:"tareas-empresa-2911f.firebasestorage.app",
+  messagingSenderId:"686763477486",
+  appId:"1:686763477486:web:b65ee267900d9f49cf3a7f"
+};
+const COL = "optimizador_proyectos";
+
+let db = null;
+try{ db = getFirestore(initializeApp(cfg)); }catch(e){ console.warn('Firestore no disponible:', e); }
+
+window.MPCloud = {
+  disponible: !!db,
+  async listar(){
+    if(!db) throw new Error('sin conexión a la base de datos');
+    const snap = await getDocs(query(collection(db, COL), orderBy('fechaActualizacion','desc')));
+    return snap.docs.map(d=> Object.assign({id:d.id}, d.data()));
+  },
+  async guardar(p){
+    if(!db) throw new Error('sin conexión a la base de datos');
+    // se usa setDoc con el id del proyecto para que actualizar no cree duplicados
+    await setDoc(doc(db, COL, p.id), p);
+    return p;
+  },
+  async eliminar(id){
+    if(!db) throw new Error('sin conexión a la base de datos');
+    await deleteDoc(doc(db, COL, id));
+  }
+};
+window.dispatchEvent(new Event('mpcloud-listo'));
+</script>
+  <div id="proyectosOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;padding:16px;box-sizing:border-box;overflow-y:auto;">
+    <div style="max-width:560px;margin:30px auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h2 style="margin:0;font-size:15px;">📂 Proyectos guardados</h2>
+        <button class="preset-btn" id="cerrarProyectosBtn">✕ cerrar</button>
+      </div>
+      <input type="text" id="buscarProyectoInput" placeholder="buscar por nombre..." style="width:100%;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:12px;">
+      <div id="proyectosLista"></div>
+    </div>
+  </div>
+
+  <footer>medidas en centímetros · cálculo tipo shelf-nesting</footer>
+</div>
+
+<script>
+let pieceIdCounter = 0;
+let forcedGroups = null;      // agrupamiento fijado al aplicar una unificación
+let lastIdealConfig = null;   // última recomendación de formatos calculada
+
+// Los "Rango"/formatos SIEMPRE se muestran y se guardan ordenados de menor a mayor
+// por el ancho real de rollo que necesitan (el "ancho del material", con sangrado
+// incluido) — sin importar el orden en que el optimizador los calculó internamente.
+// Se ordena aquí, en la fuente, para que las listas, el detalle de cada rango y las
+// exportaciones queden siempre consistentes entre sí (todos leen el mismo arreglo).
+// Resaltado de fila según la forma del aviso: los avisos en L y en U se destacan con un
+// color propio para que el diseñador los identifique de un vistazo entre los rectos.
+// L = ámbar, U = violeta.
+function estiloFilaForma(it){
+  if(!it || !it.tramos) return '';
+  const esU = String(it.tramos).split('+').length === 3;
+  return esU
+    ? 'background:rgba(167,110,255,0.14);border-left:3px solid #a76eff;'
+    : 'background:rgba(240,192,0,0.13);border-left:3px solid var(--yellow);';
+}
+// Misma idea pero con colores sólidos, para el PDF impreso (fondos claros).
+function estiloFilaFormaPrint(it){
+  if(!it || !it.tramos) return '';
+  const esU = String(it.tramos).split('+').length === 3;
+  return esU ? 'background:#efe4ff;' : 'background:#fff3cc;';
+}
+// Etiqueta corta para marcar visualmente la fila.
+function badgeForma(it){
+  if(!it || !it.tramos) return '';
+  const esU = String(it.tramos).split('+').length === 3;
+  const color = esU ? '#a76eff' : 'var(--yellow)';
+  return `<span style="display:inline-block;padding:0 5px;border-radius:4px;border:1px solid ${color};color:${color};font-size:9.5px;font-weight:700;margin-right:4px;">${esU?'U':'L'}</span>`;
+}
+
+// "recta" si el aviso es una sola pieza continua; "L" si son 2 tramos; "U" si son 3.
+function formaAviso(it){
+  if(!it.tramos) return 'recta';
+  return String(it.tramos).split('+').length === 3 ? 'U' : 'L';
+}
+// Detalle de los tramos con su posición, ej. "366 izq + 386 der" o "120 izq + 122 centro + 90 der"
+function tramosDetalle(it){
+  if(!it.tramos) return '';
+  const partes = String(it.tramos).split('+');
+  const etiquetas = partes.length === 3 ? ['izq','centro','der'] : ['izq','der'];
+  return partes.map((p,i)=> `${p} ${etiquetas[i]||''}`.trim()).join(' + ');
+}
+
+// Muestra la medida real de un aviso. Si es un aviso en L (2 tramos) o en U (3 tramos),
+// muestra debajo el desglose de cada tramo, porque el diseñador necesita saber cuál va a
+// la izquierda, al centro y a la derecha — no solo el ancho total sumado.
+function fmtMedidaReal(it, colorTramo){
+  const base = `${Math.round(it.origW)}×${Math.round(it.origH)}`;
+  if(!it.tramos) return base;
+  const partes = String(it.tramos).split('+');
+  const etiquetas = partes.length === 3 ? ['izq','centro','der'] : ['izq','der'];
+  const detalle = partes.map((p,i)=> `${p}<span style="opacity:.55;">${etiquetas[i]||''}</span>`).join('+');
+  const forma = partes.length === 3 ? 'U' : 'L';
+  return `${base}<div style="font-size:10px;color:${colorTramo||'var(--yellow)'};margin-top:2px;">${forma}: ${detalle}</div>`;
+}
+
+function sortGroupsByWidth(groups){
+  const altoMin = g => {
+    const alturas = (g.items||[]).map(it=> it.origH).filter(v=> typeof v === 'number' && !isNaN(v));
+    return alturas.length ? Math.min(...alturas) : 0;
+  };
+  // primero por ancho de rollo (menor a mayor) y, a igual ancho, por alto (menor a mayor)
+  return groups.slice().sort((a,b)=> (a.width - b.width) || (altoMin(a) - altoMin(b)));
+}
+let lastLeftover = null;      // avisos que quedaron por fuera (modo "mis rollos")
+let selectedUids = new Set(); // avisos marcados para armar un montaje
+let montajes = [];            // montajes que arma el diseñador
+let montajeSeq = 1;
+const pieceList = document.getElementById('pieceList');
+const CMYK_PALETTE = ['#00aeef','#ec008c','#f0c000','#5fd58a','#8b7fe8','#ff8a4c'];
+
+function addPieceRow(codigo, local, ancho, alto, cant, tramos){
+  // Compatibilidad con listas guardadas por versiones anteriores: antes el dato de
+  // "aviso en L/U" se pegaba al final del NOMBRE (ej. "... (aviso en L: 366+386 cm)").
+  // Si llega una fila así, se recupera el detalle de los tramos y se limpia el nombre,
+  // para que las listas viejas también muestren FORMA y TRAMOS sin tener que volver
+  // a subir la planilla.
+  if(local){
+    const legacy = String(local).match(/\s*\(aviso en [LU]:\s*([\d.,+\s]+?)\s*cm\)\s*$/i);
+    if(legacy){
+      if(!tramos) tramos = legacy[1].replace(/\s+/g,'');
+      local = String(local).replace(legacy[0], '').trim();
+    }
+  }
+  const id = 'p' + (pieceIdCounter++);
+  const row = document.createElement('div');
+  row.className = 'piece-row';
+  row.dataset.id = id;
+  // "tramos" guarda la medida original compuesta de un aviso en L o en U (ej. "366+386"),
+  // para poder mostrarle al diseñador cada tramo por separado además del ancho total.
+  if(tramos) row.dataset.tramos = tramos;
+  row.innerHTML = `
+    <div class="field">
+      <label>CÓDIGO</label>
+      <input type="text" class="f-codigo" placeholder="4776" value="${codigo||''}">
+    </div>
+    <div class="field">
+      <label>LOCAL</label>
+      <input type="text" class="f-nombre" placeholder="ej. GALAPA" value="${local||''}">
+    </div>
+    <div class="field">
+      <label>ANCHO</label>
+      <input type="number" class="f-ancho" min="0.1" step="0.1" value="${ancho||''}">
+    </div>
+    <div class="field">
+      <label>ALTO</label>
+      <input type="number" class="f-alto" min="0.1" step="0.1" value="${alto||''}">
+    </div>
+    <div class="field">
+      <label>CANT.</label>
+      <input type="number" class="f-cant" min="1" step="1" value="${cant||1}">
+    </div>
+    <button class="del-btn" title="quitar">×</button>
+  `;
+  row.querySelector('.del-btn').addEventListener('click', () => row.remove());
+  pieceList.appendChild(row);
+}
+
+document.getElementById('addPiece').addEventListener('click', () => { addPieceRow(); refreshPieceCount(); });
+
+function refreshPieceCount(){
+  const n = pieceList.querySelectorAll('.piece-row').length;
+  document.getElementById('pieceCountLabel').textContent =
+    n === 0 ? 'ningún archivo cargado' : `${n} archivo${n!==1?'s':''} cargado${n!==1?'s':''}`;
+}
+document.getElementById('togglePieceList').addEventListener('click', ()=>{
+  const wrap = document.getElementById('pieceListWrap');
+  const open = wrap.style.display === 'block';
+  wrap.style.display = open ? 'none' : 'block';
+  document.getElementById('pieceListArrow').textContent = open ? 'ver lista ▸' : 'ocultar lista ▾';
+});
+document.querySelectorAll('.preset-btn[data-w]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('rollWidth').value = btn.dataset.w;
+  });
+});
+document.querySelectorAll('.sangrado-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('sangrado').value = btn.dataset.s;
+  });
+});
+document.querySelectorAll('.machine-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('machineWidth').value = btn.dataset.m;
+  });
+});
+document.querySelectorAll('.rango-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('numRanges').value = btn.dataset.r;
+  });
+});
+document.querySelectorAll('.aprov-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('minAprov').value = btn.dataset.a;
+  });
+});
+document.querySelectorAll('.stock-add-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const el = document.getElementById('rollosDisponibles');
+    const cur = el.value.split(',').map(s=>parseFloat(s.trim())).filter(n=>n>0);
+    const w = parseFloat(btn.dataset.w);
+    if(!cur.includes(w)) cur.push(w);
+    el.value = cur.sort((a,b)=>a-b).join(', ');
+  });
+});
+document.getElementById('proyectoNombre').addEventListener('change', ()=>{ saveEstado(); renderMontajes(); });
+document.getElementById('stockClearBtn').addEventListener('click', ()=>{
+  document.getElementById('rollosDisponibles').value = '';
+});
+
+// si cambias los anchos de bodega o el mínimo exigido estando en modo B, recalcula solo
+// (solo si el valor realmente cambió, para no perder el panel abierto al quitar el foco)
+['rollosDisponibles','minAprov'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.dataset.prev = el.value;
+  el.addEventListener('change', ()=>{
+    if(el.value === el.dataset.prev) return;
+    el.dataset.prev = el.value;
+    if(document.getElementById('organizarPor').value === 'rollos'
+       && pieceList.querySelectorAll('.piece-row').length){
+      showInitialRecommendation();
+    }
+  });
+});
+
+// alternar entre "por rangos" y "por mis rollos"
+function syncOrganizarPor(){
+  const v = document.getElementById('organizarPor').value;
+  document.getElementById('opcionRangos').style.display = (v==='rangos') ? 'block' : 'none';
+  document.getElementById('opcionRollos').style.display = (v==='rollos') ? 'block' : 'none';
+  document.querySelectorAll('.modo-btn').forEach(b=>{
+    const on = b.dataset.modo === v;
+    b.style.borderColor = on ? 'var(--cyan)' : 'var(--line)';
+    b.style.background = on ? 'rgba(0,174,239,0.10)' : 'var(--panel-2)';
+  });
+}
+document.querySelectorAll('.modo-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('organizarPor').value = btn.dataset.modo;
+    syncOrganizarPor();
+    if(pieceList.querySelectorAll('.piece-row').length) showInitialRecommendation();
+  });
+});
+syncOrganizarPor();
+
+// El campo de ancho de rollo solo aplica a los modos "single" y "compare";
+// en "groups" (el modo por defecto) el programa sugiere los anchos, así que se oculta.
+function syncRollWidthVisibility(){
+  const mode = document.getElementById('modeSelect').value;
+  document.getElementById('rollWidthFields').style.display = (mode === 'groups') ? 'none' : 'block';
+}
+document.getElementById('modeSelect').addEventListener('change', syncRollWidthVisibility);
+syncRollWidthVisibility();
+
+// Datos cargados desde "Listado_de_Avisos_Supergiros_Atlantico.xlsx"
+const PIECES_SUPERGIROS = [{"nombre":"4776-GALAPA","ancho":339.0,"alto":31.0,"obs":""},{"nombre":"1694-LOCAL 126 MIAMI","ancho":180.0,"alto":50.0,"obs":""},{"nombre":"5059-PANADERIA ATLANTICO","ancho":130.0,"alto":60.0,"obs":""},{"nombre":"5060-PLAZA BOLICHE","ancho":320.0,"alto":70.0,"obs":""},{"nombre":"5065-CDA BOLICHE","ancho":1350.0,"alto":100.0,"obs":""},{"nombre":"5074-ANTIGUO CDA","ancho":1071.0,"alto":90.0,"obs":""},{"nombre":"5078-LAS FLORES","ancho":240.0,"alto":55.0,"obs":""},{"nombre":"1153-CDA CARIBE","ancho":800.0,"alto":100.0,"obs":""},{"nombre":"3388-SAN DIEGO","ancho":350.0,"alto":70.0,"obs":""},{"nombre":"4048-BODEGA DE CLARA","ancho":170.0,"alto":60.0,"obs":""},{"nombre":"4255-TELE GLOBAL JJ","ancho":240.0,"alto":58.0,"obs":""},{"nombre":"4559-CINCO ESTRELLAS","ancho":690.0,"alto":70.0,"obs":""},{"nombre":"4560-OLIMPICO","ancho":165.0,"alto":50.0,"obs":""},{"nombre":"4568-MIKELOT","ancho":380.0,"alto":40.0,"obs":""},{"nombre":"4800-TIENDA MARACAY","ancho":140.0,"alto":32.0,"obs":""},{"nombre":"4804-MEDELLIN 300","ancho":270.0,"alto":100.0,"obs":""},{"nombre":"4904-PELUQUERIA EMMY","ancho":464.0,"alto":60.0,"obs":""},{"nombre":"4908-ESTERCITA FORERO","ancho":756.0,"alto":50.0,"obs":""},{"nombre":"4910-PALMAR DE CARIBE","ancho":200.0,"alto":62.0,"obs":""},{"nombre":"4911-EDUARDO CORREA","ancho":535.0,"alto":50.0,"obs":""},{"nombre":"7224-EL DIVINO NIÑO","ancho":340.0,"alto":60.0,"obs":""},{"nombre":"7224-EL DIVINO NIÑO","ancho":580.0,"alto":60.0,"obs":""},{"nombre":"8479-LOCAL PETROMIL # 2","ancho":390.0,"alto":70.0,"obs":"NO TIENEN AVISO HAY QUE HACER AVISO NUEVO O QUE SUPERGIROS LO SUMINISTRE"},{"nombre":"8479-LOCAL PETROMIL # 2","ancho":490.0,"alto":70.0,"obs":""},{"nombre":"1191-ROMELIO MARTINEZ","ancho":644.0,"alto":70.0,"obs":""},{"nombre":"1208-HOTEL DOS MUNDOS","ancho":265.0,"alto":32.0,"obs":""},{"nombre":"4832-TIENDA LA VIÑA","ancho":369.0,"alto":50.0,"obs":""},{"nombre":"4871-LOCAL DE LOS TALLERES","ancho":200.0,"alto":70.0,"obs":""},{"nombre":"4890-LOCAL DE LA 51","ancho":270.0,"alto":70.0,"obs":""},{"nombre":"5263-ROCA PAN","ancho":170.0,"alto":45.0,"obs":""},{"nombre":"5651-MIAMI 2","ancho":140.0,"alto":70.0,"obs":"NO TIENEN AVISO HAY QUE HACER AVISO NUEVO O QUE SUPERGIROS LO SUMINISTRE"},{"nombre":"7273-CENTRO CIVICO","ancho":550.0,"alto":100.0,"obs":""},{"nombre":"7274-CLINICA CENTRO","ancho":470.0,"alto":70.0,"obs":""},{"nombre":"4664-LA 20","ancho":300.0,"alto":50.0,"obs":""},{"nombre":"4659-LA PARMESANA","ancho":1060.0,"alto":70.0,"obs":""},{"nombre":"2828-LOCAL JULIAO","ancho":752.0,"alto":58.0,"obs":""},{"nombre":"4807-CDA 7 CON MURILLO","ancho":360.0,"alto":70.0,"obs":""},{"nombre":"4140-LOCAL LA FRONTERA","ancho":350.0,"alto":70.0,"obs":""},{"nombre":"4140-LOCAL LA FRONTERA","ancho":400.0,"alto":70.0,"obs":""},{"nombre":"2831-LOCAL BUENOS AIRES","ancho":350.0,"alto":70.0,"obs":""},{"nombre":"2892-LOCAL ROPERO","ancho":1112.0,"alto":79.0,"obs":""},{"nombre":"3973-PASO CARRIZAL","ancho":200.0,"alto":50.0,"obs":""},{"nombre":"4957-LOCAL ARROYITO","ancho":230.0,"alto":67.0,"obs":""},{"nombre":"3719-LOCAL MARIANITA","ancho":370.0,"alto":74.0,"obs":""},{"nombre":"4305-LOCAL LA PACHANGA","ancho":250.0,"alto":50.0,"obs":""},{"nombre":"2846-LOCAL EL PARQUECITO","ancho":200.0,"alto":60.0,"obs":""},{"nombre":"4729-TIENDA LAS BRISAS","ancho":756.0,"alto":70.0,"obs":""},{"nombre":"4731-IGLESIA LA MAGDALENA","ancho":220.0,"alto":50.0,"obs":""},{"nombre":"2893-LOCAL DE LA 8 N 2","ancho":400.0,"alto":40.0,"obs":""},{"nombre":"7303-EL ROMANCE DEL LIMON","ancho":1182.0,"alto":50.0,"obs":""},{"nombre":"8871-EL TISON ROJO 2","ancho":380.0,"alto":70.0,"obs":""},{"nombre":"4727-TIENDA MANDI","ancho":380.0,"alto":60.0,"obs":""},{"nombre":"4750-EDS TEXACO","ancho":242.0,"alto":57.0,"obs":""},{"nombre":"4719-CAMBELL","ancho":510.0,"alto":90.0,"obs":""},{"nombre":"4722-LOCAL LA SINUANA","ancho":300.0,"alto":50.0,"obs":""},{"nombre":"3267-LOCAL APOLO 8","ancho":280.0,"alto":60.0,"obs":""},{"nombre":"7845-LOCAL EL ÉXITO","ancho":208.0,"alto":48.0,"obs":""},{"nombre":"7353-ESPIGA DORADA","ancho":240.0,"alto":62.0,"obs":""},{"nombre":"4728-LOCAL DE LA 8","ancho":272.0,"alto":70.0,"obs":""},{"nombre":"4473-PARQUEADERO H RIVERO","ancho":444.0,"alto":70.0,"obs":""},{"nombre":"7761-LOCAL LOS TALLERES","ancho":240.0,"alto":70.0,"obs":""},{"nombre":"4783-LOCAL SUZIKI","ancho":220.0,"alto":70.0,"obs":""},{"nombre":"8957-LOS ESTUDIANTES","ancho":400.0,"alto":70.0,"obs":""},{"nombre":"4845-TIENDA LA PRIMAVERA","ancho":486.0,"alto":60.0,"obs":""},{"nombre":"4769-CALDAS 38","ancho":1158.0,"alto":70.0,"obs":"EL AVISO QUE TIENE ES UN ENTAMBORADO"},{"nombre":"4643-UNIFORMES ANITA","ancho":490.0,"alto":55.0,"obs":""},{"nombre":"4602-TIENDA EL OASIS","ancho":230.0,"alto":70.0,"obs":""},{"nombre":"3699-EL MANJAR 44","ancho":160.0,"alto":55.0,"obs":""},{"nombre":"8975-LOCAL LA JUGADA","ancho":310.0,"alto":60.0,"obs":""},{"nombre":"8975-LOCAL LA JUGADA","ancho":230.0,"alto":60.0,"obs":""},{"nombre":"2334-LOCAL VILLA BLANCA","ancho":260.0,"alto":50.0,"obs":""},{"nombre":"7759-LOCAL LA FORTUNA","ancho":270.0,"alto":45.0,"obs":""},{"nombre":"8218-LOCAL CEVILLAR","ancho":200.0,"alto":50.0,"obs":""},{"nombre":"8218-LOCAL CEVILLAR","ancho":170.0,"alto":50.0,"obs":""}];
+
+function loadPieceArray(list){
+  pieceList.innerHTML = '';
+  list.forEach(p => addPieceRow(p.nombre, p.ancho, p.alto, 1));
+}
+
+// la lista empieza vacía — el usuario carga su propio archivo con "+ subir planilla"
+
+// --- Importación compartida: matriz de filas (arrays de columnas) -> filas de piezas ---
+// Una celda solo cuenta como "número puro" si es TODA ella un número (ej. "4664" o "50").
+// Un texto como "7 MURILLO" o "LA 17" NO cuenta como número aunque empiece con un dígito —
+// antes se colaba como si fuera el código del local, y ahí estaba el error.
+function isPureNumber(s){
+  return /^-?\d+([.,]\d+)?$/.test(s.trim());
+}
+// Medida compuesta: "366+386" = aviso en L (2 tramos), "120+122+90" = aviso en U (3 tramos,
+// izquierda+centro+derecha). El ancho total del aviso es la suma de todos los tramos.
+function parseCompoundSize(s){
+  const t = s.trim();
+  if(!/^\d+([.,]\d+)?(\s*\+\s*\d+([.,]\d+)?){1,2}$/.test(t)) return null;
+  const parts = t.split('+').map(p=> parseFloat(p.trim().replace(',','.')));
+  if(parts.some(p=> isNaN(p))) return null;
+  return { total: parts.reduce((a,b)=>a+b,0), parts, shape: parts.length===2 ? 'L' : 'U' };
+}
+
+function importRowsFromMatrix(rows, clearFirst){
+  if(clearFirst) pieceList.innerHTML = '';
+  let imported = 0, ignored = 0;
+  let lastCodigo = '', lastLabel = '';
+  rows.forEach(cols=>{
+    if(!cols || !cols.length) return;
+
+    // Se recorren las celdas de la fila identificando cuáles son medidas: un número puro
+    // (alto, o ancho simple) o una medida compuesta con "+" (ancho de un aviso en L/U).
+    const pureIdx = [];
+    const measures = []; // {idx, value, compound}
+    cols.forEach((c,i)=>{
+      const val = (c===null || c===undefined) ? '' : String(c).trim();
+      if(val === '') return;
+      if(isPureNumber(val)){
+        pureIdx.push(i);
+        measures.push({ idx:i, value: parseFloat(val.replace(',','.')), compound:null });
+        return;
+      }
+      const comp = parseCompoundSize(val);
+      if(comp) measures.push({ idx:i, value: comp.total, compound: comp });
+    });
+
+    if(measures.length < 2){ ignored++; return; }
+    measures.sort((a,b)=> a.idx - b.idx);
+    // el ALTO siempre es la última medida de la fila (nunca viene compuesto con "+");
+    // el ANCHO es la medida justo antes — puede ser un número simple o uno compuesto.
+    const altoM  = measures[measures.length-1];
+    const anchoM = measures[measures.length-2];
+    const ancho = anchoM.value, alto = altoM.value;
+    if(!ancho || !alto || ancho<=0 || alto<=0){ ignored++; return; }
+    const anchoIdx = anchoM.idx, altoIdx = altoM.idx;
+
+    // El código del local es el número puro que sobra después de sacar ancho y alto —
+    // nunca un texto, aunque empiece con dígito (eso es un nombre de zona/CDA, no un código).
+    const restPure = pureIdx.filter(i=> i!==anchoIdx && i!==altoIdx);
+    let codigo = '';
+    if(restPure.length){
+      codigo = String(cols[restPure[restPure.length-1]]).trim();
+    }
+
+    let label = cols
+      .filter((c,i)=> i!==anchoIdx && i!==altoIdx && !pureIdx.includes(i) && c!==null && c!==undefined && String(c).trim()!=='')
+      .map(c=>String(c).trim()).join(' ');
+
+    // aviso en L o en U: se guarda el detalle de los tramos por separado para que el
+    // diseñador sepa cuál es izquierda / centro / derecha, además del ancho total.
+    const tramos = anchoM.compound
+      ? anchoM.compound.parts.map(p=> p % 1 === 0 ? p : p.toFixed(1)).join('+')
+      : '';
+
+    // filas de continuación (segunda lona del mismo local): heredan código y nombre
+    if(codigo) lastCodigo = codigo; else codigo = lastCodigo;
+    if(label) lastLabel = label; else label = lastLabel;
+    if(!label) label = 'sin nombre';
+
+    addPieceRow(codigo, label, ancho, alto, 1, tramos);
+    imported++;
+  });
+  return { imported, ignored };
+}
+
+// Lee el encabezado de la planilla (NOMBRE PROYECTO / LISTA No. / FECHA DE LISTA) para
+// pre-llenar el nombre del proyecto automáticamente — sin pisar lo que ya hayas escrito.
+function extractProjectMetaFromMatrix(rows){
+  const meta = { nombre: '', listaNo: '' };
+  for(let r = 0; r < Math.min(rows.length, 6); r++){
+    const row = rows[r] || [];
+    for(let c = 0; c < row.length; c++){
+      const val = (row[c]===null || row[c]===undefined) ? '' : String(row[c]).trim();
+      if(!val) continue;
+      if(!meta.nombre && /NOMBRE\s*(DEL)?\s*PROYECTO/i.test(val)){
+        for(let k=c+1;k<row.length;k++){
+          const v2 = (row[k]===null||row[k]===undefined) ? '' : String(row[k]).trim();
+          if(v2){ meta.nombre = v2; break; }
+        }
+      }
+      if(!meta.listaNo && /LISTA\s*No/i.test(val)){
+        // el valor puede estar en la misma fila (celda siguiente) o en la fila de abajo,
+        // en la misma columna (algunas planillas combinan el encabezado en dos filas)
+        for(let k=c+1;k<row.length;k++){
+          const v2 = (row[k]===null||row[k]===undefined) ? '' : String(row[k]).trim();
+          if(v2){ meta.listaNo = v2; break; }
+        }
+        if(!meta.listaNo && rows[r+1]){
+          const below = rows[r+1][c];
+          const v2 = (below===null||below===undefined) ? '' : String(below).trim();
+          if(v2) meta.listaNo = v2;
+        }
+      }
+    }
+  }
+  return meta;
+}
+
+// Importar filas pegadas desde el portapapeles (separadas por tabs al copiar de Excel)
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('importText').value;
+  const msgEl = document.getElementById('importMsg');
+  const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  if(!lines.length){
+    msgEl.textContent = 'Pega primero algunas filas.';
+    msgEl.style.color = 'var(--danger)';
+    return;
+  }
+  const rows = lines.map(line=>{
+    let cols = line.split('\t');
+    if(cols.length < 2) cols = line.split(/\s{2,}|,/);
+    return cols;
+  });
+  const { imported, ignored } = importRowsFromMatrix(rows, false);
+  msgEl.textContent = `${imported} fila(s) importada(s)${ignored ? `, ${ignored} ignorada(s) por falta de medidas` : ''}.`;
+  msgEl.style.color = imported ? 'var(--good)' : 'var(--danger)';
+  document.getElementById('importText').value = '';
+  refreshPieceCount();
+  if(imported > 0){ selectedUids.clear(); showInitialRecommendation(); saveEstado(); }
+});
+
+// --- Lector de .xlsx (ZIP + inflate nativo del navegador) y .csv, sin librerías externas ---
+async function parseZip(buffer){
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  let eocdOffset = -1;
+  const searchStart = Math.max(0, bytes.length - 22 - 65536);
+  for(let i = bytes.length - 22; i >= searchStart; i--){
+    if(view.getUint32(i, true) === 0x06054b50){ eocdOffset = i; break; }
+  }
+  if(eocdOffset < 0) throw new Error('el archivo no parece un .xlsx válido');
+  const entryCount = view.getUint16(eocdOffset+10, true);
+  let offset = view.getUint32(eocdOffset+16, true);
+  const entries = {};
+  for(let i=0; i<entryCount; i++){
+    if(view.getUint32(offset, true) !== 0x02014b50) break;
+    const compMethod = view.getUint16(offset+10, true);
+    const compSize = view.getUint32(offset+20, true);
+    const nameLen = view.getUint16(offset+28, true);
+    const extraLen = view.getUint16(offset+30, true);
+    const commentLen = view.getUint16(offset+32, true);
+    const localHeaderOffset = view.getUint32(offset+42, true);
+    const name = new TextDecoder('utf-8').decode(bytes.slice(offset+46, offset+46+nameLen));
+    entries[name] = { compMethod, compSize, localHeaderOffset };
+    offset += 46 + nameLen + extraLen + commentLen;
+  }
+  return { bytes, view, entries };
+}
+
+async function readZipEntry(zip, name){
+  const meta = zip.entries[name];
+  if(!meta) return null;
+  const { view, bytes } = zip;
+  const lh = meta.localHeaderOffset;
+  if(view.getUint32(lh, true) !== 0x04034b50) throw new Error('cabecera local inválida en el zip');
+  const compMethod = view.getUint16(lh+8, true);
+  const nameLen = view.getUint16(lh+26, true);
+  const extraLen = view.getUint16(lh+28, true);
+  const dataStart = lh + 30 + nameLen + extraLen;
+  const compData = bytes.slice(dataStart, dataStart + meta.compSize);
+  if(compMethod === 0) return compData;
+  if(compMethod === 8){
+    const ds = new DecompressionStream('deflate-raw');
+    const writer = ds.writable.getWriter();
+    writer.write(compData);
+    writer.close();
+    const ab = await new Response(ds.readable).arrayBuffer();
+    return new Uint8Array(ab);
+  }
+  throw new Error('método de compresión no soportado en el zip: ' + compMethod);
+}
+
+function colLetterToIndex(letters){
+  let idx = 0;
+  for(let i=0; i<letters.length; i++) idx = idx*26 + (letters.charCodeAt(i) - 64);
+  return idx - 1;
+}
+
+function parseSharedStrings(xmlText){
+  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+  const siNodes = doc.getElementsByTagName('si');
+  const out = [];
+  for(const si of siNodes){
+    let text = '';
+    const tNodes = si.getElementsByTagName('t');
+    for(const t of tNodes) text += t.textContent;
+    out.push(text);
+  }
+  return out;
+}
+
+function parseSheetRows(xmlText, sharedStrings){
+  const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+  const rowNodes = doc.getElementsByTagName('row');
+  const rows = [];
+  for(const rowNode of rowNodes){
+    const cellNodes = rowNode.getElementsByTagName('c');
+    const rowArr = [];
+    let autoIdx = 0;
+    for(const c of cellNodes){
+      const ref = c.getAttribute('r');
+      const m = ref ? ref.match(/^[A-Z]+/) : null;
+      const colIdx = m ? colLetterToIndex(m[0]) : autoIdx;
+      const type = c.getAttribute('t');
+      let value = '';
+      if(type === 's'){
+        const vNode = c.getElementsByTagName('v')[0];
+        const idx = vNode ? parseInt(vNode.textContent) : NaN;
+        value = (!isNaN(idx) && sharedStrings[idx]!==undefined) ? sharedStrings[idx] : '';
+      } else if(type === 'inlineStr'){
+        const isNode = c.getElementsByTagName('is')[0];
+        value = isNode ? isNode.textContent : '';
+      } else {
+        const vNode = c.getElementsByTagName('v')[0];
+        value = vNode ? vNode.textContent : '';
+      }
+      while(rowArr.length < colIdx) rowArr.push('');
+      rowArr[colIdx] = value;
+      autoIdx = colIdx + 1;
+    }
+    rows.push(rowArr);
+  }
+  return rows;
+}
+
+async function parseXlsxFile(file){
+  const buffer = await file.arrayBuffer();
+  const zip = await parseZip(buffer);
+  let sheetName = Object.keys(zip.entries).find(n => /^xl\/worksheets\/sheet1\.xml$/i.test(n));
+  if(!sheetName){
+    const candidates = Object.keys(zip.entries).filter(n => /^xl\/worksheets\/sheet\d+\.xml$/i.test(n));
+    candidates.sort();
+    sheetName = candidates[0];
+  }
+  if(!sheetName) throw new Error('no se encontró ninguna hoja dentro del archivo');
+
+  let sharedStrings = [];
+  if(zip.entries['xl/sharedStrings.xml']){
+    const ssBytes = await readZipEntry(zip, 'xl/sharedStrings.xml');
+    sharedStrings = parseSharedStrings(new TextDecoder('utf-8').decode(ssBytes));
+  }
+  const sheetBytes = await readZipEntry(zip, sheetName);
+  const sheetXml = new TextDecoder('utf-8').decode(sheetBytes);
+  return parseSheetRows(sheetXml, sharedStrings);
+}
+
+document.getElementById('fileUpload').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const msgEl = document.getElementById('importMsg');
+  msgEl.style.color = 'var(--text-dim)';
+  msgEl.textContent = 'Leyendo "' + file.name + '"...';
+  try{
+    let rows;
+    if(/\.csv$/i.test(file.name)){
+      const text = await file.text();
+      rows = text.split('\n').map(l=>l.replace(/\r$/,'')).filter(l=>l.length>0).map(l=>l.split(/[,;\t]/));
+    } else {
+      if(typeof DecompressionStream === 'undefined'){
+        msgEl.textContent = 'Este navegador no puede leer .xlsx directamente. Guarda el archivo como .csv, o cópialo y pégalo abajo.';
+        msgEl.style.color = 'var(--danger)';
+        e.target.value = '';
+        return;
+      }
+      rows = await parseXlsxFile(file);
+    }
+    const { imported, ignored } = importRowsFromMatrix(rows, true);
+    msgEl.textContent = `${imported} fila(s) cargada(s) desde "${file.name}"${ignored ? `, ${ignored} fila(s) ignorada(s) (encabezados u otras sin medidas)` : ''}.`;
+    msgEl.style.color = imported ? 'var(--good)' : 'var(--danger)';
+    refreshPieceCount();
+    // pre-llena el nombre del proyecto con lo que diga el encabezado de la planilla
+    // (NOMBRE PROYECTO / LISTA No.), sin pisar lo que ya hayas escrito a mano.
+    const campoProyecto = document.getElementById('proyectoNombre');
+    if(campoProyecto && !campoProyecto.value.trim()){
+      const meta = extractProjectMetaFromMatrix(rows);
+      if(meta.nombre){
+        campoProyecto.value = meta.listaNo ? `${meta.nombre} — Lista ${meta.listaNo}` : meta.nombre;
+      }
+    }
+  if(imported > 0){ selectedUids.clear(); showInitialRecommendation(); saveEstado(); }
+  } catch(err){
+    console.error(err);
+    msgEl.textContent = 'No se pudo leer el archivo: ' + err.message;
+    msgEl.style.color = 'var(--danger)';
+  }
+  e.target.value = '';
+});
+
+function readPieces(sangrado){
+  const rows = pieceList.querySelectorAll('.piece-row');
+  const items = [];
+  rows.forEach((row, ri)=>{
+    const codigo = row.querySelector('.f-codigo').value.trim();
+    const nombre = row.querySelector('.f-nombre').value.trim() || 'sin nombre';
+    const ancho = parseFloat(row.querySelector('.f-ancho').value);
+    const alto = parseFloat(row.querySelector('.f-alto').value);
+    const cant = parseInt(row.querySelector('.f-cant').value) || 1;
+    const tramos = row.dataset.tramos || '';
+    if(!ancho || !alto || ancho<=0 || alto<=0) return;
+    const bledW = ancho + sangrado*2;
+    const bledH = alto + sangrado*2;
+    for(let i=0;i<cant;i++){
+      items.push({uid:`r${ri}c${i}`, codigo, nombre, w:bledW, h:bledH, origW:ancho, origH:alto, tramos});
+    }
+  });
+  return items;
+}
+
+// Shelf-based nesting (FFDH with optional rotation)
+function packRoll(rollWidth, items, allowRotation){
+  const unplaced = [];
+  const placeable = [];
+
+  items.forEach(it=>{
+    let w = it.w, h = it.h;
+    let fitsAsIs = w <= rollWidth;
+    let fitsRotated = allowRotation && h <= rollWidth;
+
+    if(!fitsAsIs && !fitsRotated){
+      unplaced.push(it);
+      return;
+    }
+    // Cuando las dos orientaciones caben, se prefiere la que deja el ANCHO más angosto
+    // (no la más ancha): así la pieza deja hueco libre en la fila para combinarse con
+    // otras, en vez de ocupar casi todo el rollo ella sola.
+    if(allowRotation){
+      if(fitsAsIs && fitsRotated){
+        if(w > h){ // girar deja un ancho más angosto, más fácil de combinar
+          [w,h] = [h,w];
+        }
+      } else if(!fitsAsIs && fitsRotated){
+        [w,h] = [h,w];
+      }
+    }
+    placeable.push({...it, w, h});
+  });
+
+  // sort tallest first
+  placeable.sort((a,b)=> b.h - a.h);
+
+  // Cada fila puede tener varias COLUMNAS lado a lado (no solo una pieza de punta a
+  // punta). Una pieza larga abre su propia columna; las piezas chicas que caben en el
+  // ancho que le sobra a esa fila se APILAN una debajo de otra en esa misma columna,
+  // en vez de arrancar una fila nueva — así se aprovecha el largo que deja libre la
+  // pieza grande en vez de dejarlo en blanco.
+  const shelves = []; // {height, usedWidth, y, columns:[{x,width,filledHeight,items[]}]}
+
+  placeable.forEach(it=>{
+    // 1) ¿cabe apilada en una columna ya abierta (de cualquier fila)? — se elige la
+    //    que deje menos alto libre después de ponerla (mejor ajuste).
+    let bestCol = null, bestColLeftover = Infinity;
+    shelves.forEach(shelf=>{
+      shelf.columns.forEach(col=>{
+        const leftoverH = shelf.height - col.filledHeight;
+        if(col.width + 1e-6 >= it.w && leftoverH + 1e-6 >= it.h){
+          if(leftoverH < bestColLeftover){ bestColLeftover = leftoverH; bestCol = { shelf, col }; }
+        }
+      });
+    });
+    if(bestCol){
+      const { col } = bestCol;
+      col.items.push({...it, x: col.x, y: col.filledHeight});
+      col.filledHeight += it.h;
+      return;
+    }
+
+    // 2) si no, ¿se puede abrir una columna NUEVA en una fila ya existente? (la pieza
+    //    no puede ser más alta que esa fila, y debe sobrar ancho) — se prefiere la
+    //    fila donde menos alto sobre después (para no desperdiciar filas muy altas).
+    let bestShelf = null, bestShelfLeftover = Infinity;
+    shelves.forEach(shelf=>{
+      if(it.h <= shelf.height + 1e-6 && shelf.usedWidth + it.w <= rollWidth + 1e-6){
+        const leftover = shelf.height - it.h;
+        if(leftover < bestShelfLeftover){ bestShelfLeftover = leftover; bestShelf = shelf; }
+      }
+    });
+    if(bestShelf){
+      const col = { x: bestShelf.usedWidth, width: it.w, filledHeight: it.h, items: [] };
+      col.items.push({...it, x: col.x, y: 0});
+      bestShelf.columns.push(col);
+      bestShelf.usedWidth += it.w;
+      return;
+    }
+
+    // 3) si nada de lo anterior sirve, se abre una fila nueva
+    const shelf = { height: it.h, usedWidth: it.w, y: 0, columns: [] };
+    const col = { x: 0, width: it.w, filledHeight: it.h, items: [] };
+    col.items.push({...it, x: 0, y: 0});
+    shelf.columns.push(col);
+    shelves.push(shelf);
+  });
+
+  shelves.forEach(shelf=>{ shelf.items = shelf.columns.flatMap(c=>c.items); });
+
+  // posiciones Y acumuladas (cada fila arranca donde terminó la anterior)
+  let cursorY = 0;
+  shelves.forEach(s=>{
+    s.y = cursorY;
+    s.items.forEach(it=> it.y += cursorY);
+    cursorY += s.height;
+  });
+
+  const totalLength = cursorY;
+  const usedArea = placeable.reduce((sum,it)=> sum + it.w*it.h, 0);
+  const totalArea = rollWidth * totalLength;
+  const efficiency = totalArea>0 ? (usedArea/totalArea*100) : 0;
+
+  return { shelves, totalLength, efficiency, unplaced, placedCount: placeable.length };
+}
+
+function buildViz(rollWidth, result, maxPxWidth){
+  maxPxWidth = maxPxWidth || 300;
+  const scale = maxPxWidth / rollWidth;
+  const svgW = rollWidth * scale;
+  const svgH = Math.max(result.totalLength * scale, 40);
+
+  let rects = '';
+  let shelfLines = '';
+  const nameColor = {};
+  let colorIdx = 0;
+
+  result.shelves.forEach((shelf, si)=>{
+    shelf.items.forEach(it=>{
+      if(!(it.nombre in nameColor)){
+        nameColor[it.nombre] = CMYK_PALETTE[colorIdx % CMYK_PALETTE.length];
+        colorIdx++;
+      }
+      const color = nameColor[it.nombre];
+      const x = it.x*scale, y = it.y*scale, w = it.w*scale, h = it.h*scale;
+      rects += `<rect x="${x}" y="${y}" width="${Math.max(w-1,0)}" height="${Math.max(h-1,0)}" fill="${color}" fill-opacity="0.85" stroke="#0d0d0d" stroke-width="1"/>`;
+      // se muestran las DOS medidas dentro del rectángulo: MR = medida real del
+      // archivo, MS = medida con sangrado (la que de verdad ocupa en el rollo).
+      if(w>34 && h>30){
+        rects += `<text x="${x+w/2}" y="${y+h/2-6}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="9" fill="#0d0d0d" text-anchor="middle" dominant-baseline="middle">MR ${Math.round(it.origW)}×${Math.round(it.origH)}</text>`;
+        rects += `<text x="${x+w/2}" y="${y+h/2+7}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="8" fill="#5a4a00" text-anchor="middle" dominant-baseline="middle">MS ${Math.round(it.w)}×${Math.round(it.h)}</text>`;
+      } else if(w>26 && h>22){
+        // espacio angosto pero con altura suficiente para dos líneas: se mantienen MR y MS
+        rects += `<text x="${x+w/2}" y="${y+h/2-5}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="7.5" fill="#0d0d0d" text-anchor="middle" dominant-baseline="middle">MR ${Math.round(it.origW)}×${Math.round(it.origH)}</text>`;
+        rects += `<text x="${x+w/2}" y="${y+h/2+5}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="7" fill="#5a4a00" text-anchor="middle" dominant-baseline="middle">MS ${Math.round(it.w)}×${Math.round(it.h)}</text>`;
+      } else if(w>26 && h>16){
+        rects += `<text x="${x+w/2}" y="${y+h/2}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="9" fill="#0d0d0d" text-anchor="middle" dominant-baseline="middle">MR ${Math.round(it.origW)}×${Math.round(it.origH)}</text>`;
+      }
+    });
+    if(si>0){
+      const y = shelf.y*scale;
+      shelfLines += `<line x1="0" y1="${y}" x2="${svgW}" y2="${y}" stroke="#ec008c" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>`;
+    }
+  });
+
+  let ticks = '';
+  for(let cm=0; cm<=result.totalLength; cm+=20){
+    const y = cm*scale;
+    ticks += `<line x1="-6" y1="${y}" x2="0" y2="${y}" stroke="#a9a79e" stroke-width="1"/>`;
+    ticks += `<text x="-10" y="${y+3}" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="8" fill="#a9a79e" text-anchor="end">${cm}</text>`;
+  }
+
+  const svg = `
+    <svg width="${svgW+34}" height="${svgH+10}" viewBox="-34 -4 ${svgW+34} ${svgH+14}">
+      <rect x="0" y="0" width="${svgW}" height="${svgH}" fill="#ede6d6"/>
+      ${ticks}
+      ${rects}
+      ${shelfLines}
+    </svg>
+  `;
+
+  let legendHtml = '<div class="legend">';
+  Object.entries(nameColor).forEach(([name,color])=>{
+    legendHtml += `<span><span class="swatch" style="background:${color}"></span>${name}</span>`;
+  });
+  legendHtml += '</div>';
+  legendHtml += `<div style="font-size:10.5px;color:var(--text-dim);margin-top:6px;">MR = medida real del archivo · MS = medida con sangrado</div>`;
+
+  return { svg, legendHtml };
+}
+
+function renderResults(rollWidth, result){
+  const resultsEl = document.getElementById('results');
+  const lengthM = (result.totalLength/100).toFixed(2);
+
+  let statsHtml = `
+    <div class="stats">
+      <div class="stat">
+        <span class="num">${lengthM} m</span>
+        <span class="lbl">largo lineal</span>
+      </div>
+      <div class="stat">
+        <span class="num">${result.efficiency.toFixed(0)}%</span>
+        <span class="lbl">aprovechamiento</span>
+      </div>
+      <div class="stat ${result.unplaced.length ? 'warn':''}">
+        <span class="num">${result.placedCount}/${result.placedCount + result.unplaced.length}</span>
+        <span class="lbl">piezas acomodadas</span>
+      </div>
+    </div>
+  `;
+
+  const { svg, legendHtml } = buildViz(rollWidth, result);
+
+  let unplacedHtml = '';
+  if(result.unplaced.length){
+    const list = result.unplaced.map(u=>`${u.nombre} (${u.origW}×${u.origH} cm real, ${u.w}×${u.h} cm con sangrado)`).join(', ');
+    unplacedHtml = `<div class="unplaced-box"><strong>${result.unplaced.length} pieza(s) no caben</strong> en un rollo de ${rollWidth} cm de ancho: ${list}. Revisa las medidas, el sangrado o el ancho del rollo.</div>`;
+  }
+
+  const vizHtml = `
+    <div class="viz-panel">
+      <h2 style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:14px;margin:0 0 10px;">Acomodo en el rollo</h2>
+      <div class="viz-scroll">${svg}</div>
+      ${legendHtml}
+      ${unplacedHtml}
+    </div>
+  `;
+
+  resultsEl.innerHTML = statsHtml + vizHtml;
+}
+
+function renderComparison(currentWidth, currentResult, candidateWidths, items, allowRotation){
+  const container = document.getElementById('compareResults');
+  if(!candidateWidths.length){ container.innerHTML=''; return; }
+
+  // build results for every candidate (skip duplicate of current width, we'll merge it in)
+  const widthsToTest = Array.from(new Set([currentWidth, ...candidateWidths]));
+  const rows = widthsToTest.map(w=>{
+    const r = packRoll(w, items, allowRotation);
+    const materialArea = w * r.totalLength; // cm2 of roll consumed
+    return { width:w, result:r, materialArea, complete: r.unplaced.length===0 };
+  });
+
+  // only rank candidates that fit every piece; if none fit fully, rank by most pieces placed then area
+  const complete = rows.filter(r=>r.complete);
+  const pool = complete.length ? complete : rows;
+  pool.sort((a,b)=> a.complete!==b.complete ? (b.complete-a.complete) : a.materialArea-b.materialArea);
+
+  const best = pool[0];
+  const currentRow = rows.find(r=>r.width===currentWidth);
+
+  let html = `<div class="viz-panel"><h2 style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:14px;margin:0 0 4px;">Comparación de formatos</h2>`;
+
+  if(best.complete && best.width !== currentWidth){
+    const wasteNow = currentRow.complete ? ((currentRow.materialArea - best.materialArea)/best.materialArea*100) : null;
+    html += `<div class="unplaced-box" style="background:rgba(95,213,138,0.08);border-color:rgba(95,213,138,0.4);color:var(--good);">
+      <strong>Mejor opción: rollo de ${best.width} cm.</strong>
+      ${wasteNow!==null ? `Con tu rollo actual (${currentWidth} cm) estás usando ${wasteNow.toFixed(0)}% más material del necesario para estos archivos.` : `Tu rollo actual (${currentWidth} cm) no logra acomodar todas las piezas; con ${best.width} cm sí caben todas.`}
+    </div>`;
+  } else if(best.width === currentWidth){
+    html += `<div class="unplaced-box" style="background:rgba(95,213,138,0.08);border-color:rgba(95,213,138,0.4);color:var(--good);"><strong>Tu rollo actual (${currentWidth} cm) ya es la mejor opción</strong> entre los formatos comparados para estos archivos.</div>`;
+  } else if(!best.complete){
+    html += `<div class="unplaced-box"><strong>Ningún formato probado acomoda todas las piezas.</strong> Prueba con anchos mayores.</div>`;
+  }
+
+  html += `<div style="overflow-x:auto;margin-top:12px;"><table style="width:100%;border-collapse:collapse;font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;font-size:12px;">
+    <thead><tr style="border-bottom:1px solid var(--line);">
+      <th style="text-align:left;padding:6px 4px;color:var(--text-dim);font-weight:500;">ancho</th>
+      <th style="text-align:right;padding:6px 4px;color:var(--text-dim);font-weight:500;">largo</th>
+      <th style="text-align:right;padding:6px 4px;color:var(--text-dim);font-weight:500;">aprov.</th>
+      <th style="text-align:left;padding:6px 4px;color:var(--text-dim);font-weight:500;"></th>
+    </tr></thead><tbody>`;
+
+  rows.sort((a,b)=> a.complete!==b.complete ? (b.complete-a.complete) : a.materialArea-b.materialArea);
+  rows.forEach(r=>{
+    const isBest = r.width===best.width;
+    const isCurrent = r.width===currentWidth;
+    const lengthM = (r.result.totalLength/100).toFixed(2);
+    const eff = r.result.efficiency.toFixed(0);
+    let tag = '';
+    if(isBest && isCurrent) tag = '<span style="color:var(--good);">✓ mejor · el tuyo</span>';
+    else if(isBest) tag = '<span style="color:var(--good);">✓ mejor opción</span>';
+    else if(isCurrent) tag = '<span style="color:var(--cyan);">tu rollo</span>';
+    const rowStyle = isBest ? 'background:rgba(95,213,138,0.06);' : isCurrent ? 'background:rgba(0,174,239,0.06);' : '';
+    html += `<tr style="border-bottom:1px solid var(--line);${rowStyle}">
+      <td style="padding:7px 4px;">${r.width} cm</td>
+      <td style="padding:7px 4px;text-align:right;">${r.complete ? lengthM+' m' : '—'}</td>
+      <td style="padding:7px 4px;text-align:right;">${r.complete ? eff+'%' : `${r.result.placedCount}/${r.result.placedCount+r.result.unplaced.length}`}</td>
+      <td style="padding:7px 4px;">${tag}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div></div>`;
+  container.innerHTML = html;
+}
+
+// --- Agrupamiento por rangos de alto (k-means 1D sobre el alto real de cada aviso) ---
+function kmeans1D(values, k){
+  const uniqueSorted = [...new Set(values)].sort((a,b)=>a-b);
+  k = Math.max(1, Math.min(k, uniqueSorted.length));
+  let centers = [];
+  for(let i=0; i<k; i++){
+    const idx = Math.floor((i+0.5) * uniqueSorted.length / k);
+    centers.push(uniqueSorted[Math.min(idx, uniqueSorted.length-1)]);
+  }
+  for(let iter=0; iter<30; iter++){
+    const buckets = Array.from({length:k}, ()=>[]);
+    values.forEach(v=>{
+      let bestI = 0, bestD = Infinity;
+      centers.forEach((c,i)=>{ const d = Math.abs(v-c); if(d<bestD){ bestD=d; bestI=i; } });
+      buckets[bestI].push(v);
+    });
+    let changed = false;
+    centers = centers.map((c,i)=>{
+      if(buckets[i].length===0) return c;
+      const mean = buckets[i].reduce((a,b)=>a+b,0) / buckets[i].length;
+      if(Math.abs(mean-c) > 1e-6) changed = true;
+      return mean;
+    });
+    if(!changed) break;
+  }
+  return [...new Set(centers)].sort((a,b)=>a-b);
+}
+
+// Sugiere cómo fraccionar (cortar longitudinalmente) un rollo más ancho que la máquina,
+// probando el ancho máximo de la máquina y los anchos que realmente piden los rangos de alto,
+// y eligiendo el corte parejo que menos material desperdicia.
+function suggestCutWidth(originalWidth, machineWidth, neededWidths){
+  const candidates = [...new Set([machineWidth, ...neededWidths])]
+    .filter(t => t > 0 && t <= machineWidth && t <= originalWidth);
+  let best = null;
+  candidates.forEach(t=>{
+    const strips = Math.floor(originalWidth / t);
+    if(strips < 1) return;
+    const leftover = originalWidth - strips*t;
+    if(!best || leftover < best.leftover - 1e-6 || (Math.abs(leftover-best.leftover) < 1e-6 && t > best.width)){
+      best = { width: t, strips, leftover };
+    }
+  });
+  return best;
+}
+
+// OPTIMIZADOR DE FORMATOS
+// Decide automáticamente cuántos formatos de rollo conviene usar (1 a 4) y de qué ancho,
+// minimizando el material total desperdiciado. Los avisos se ordenan por alto y se prueban
+// todas las formas de partirlos en grupos contiguos; cada grupo recibe el ancho que menos
+// material gasta. Dentro de cada grupo el acomodo combina avisos bajos con altos en la misma
+// fila (ej. 48 + 108 = 156 en un rollo de 160). Se elige la combinación de menor desperdicio.
+function suggestIdealWidths(items, machineWidth, allowRotation, maxFormats){
+  if(!items.length) return null;
+  maxFormats = maxFormats || 4;
+  const hiW = Math.floor(machineWidth);
+
+  // "alto efectivo" = la dimensión que va a lo ancho del rollo (la menor, si puede rotar)
+  const effAlto = it => allowRotation ? Math.min(it.w, it.h) : it.w;
+  const sorted = [...items].sort((a,b)=> effAlto(a) - effAlto(b));
+  const n = sorted.length;
+
+  // Piezas que no caben ni en el ancho máximo de la máquina
+  const overflowItems = sorted.filter(it => effAlto(it) > hiW);
+  const usable = sorted.filter(it => effAlto(it) <= hiW);
+  if(!usable.length){
+    const res = packRoll(hiW, items, allowRotation);
+    return { best:{width:hiW, area:hiW*res.totalLength, result:res, overflow:true}, groups:[], alternatives:[], overflowCount: overflowItems.length };
+  }
+
+  // Anchos candidatos: los altos que realmente existen, sus sumas de a dos y de a tres
+  // (que es como se combinan en una fila), y el máximo de la máquina.
+  const altos = [...new Set(usable.map(it => Math.ceil(effAlto(it))))];
+  const candSet = new Set([hiW]);
+  altos.forEach(a=>{
+    if(a<=hiW) candSet.add(a);
+    altos.forEach(b=>{
+      if(a+b<=hiW) candSet.add(a+b);
+      altos.forEach(c=>{ if(a+b+c<=hiW) candSet.add(a+b+c); });
+    });
+  });
+  const candidateWidths = [...candSet].filter(w=>w>0).sort((a,b)=>a-b);
+
+  // costo(i,j): mejor ancho y área para los avisos i..j-1 (ya ordenados por alto)
+  const costCache = new Map();
+  function segmentCost(i, j){
+    const key = i+'_'+j;
+    if(costCache.has(key)) return costCache.get(key);
+    const seg = usable.slice(i, j);
+    const need = Math.ceil(Math.max(...seg.map(effAlto)));
+    let best = null;
+    for(const w of candidateWidths){
+      if(w < need) continue;
+      const res = packRoll(w, seg, allowRotation);
+      if(res.unplaced.length) continue;
+      const area = w * res.totalLength;
+      if(!best || area < best.area - 1e-6 || (Math.abs(area-best.area)<1e-6 && w>best.width)){
+        best = { width:w, area, result:res };
+      }
+    }
+    costCache.set(key, best);
+    return best;
+  }
+
+  const m = usable.length;
+  // DP: dp[k][i] = mejor solución para los primeros i avisos usando k formatos
+  let dp = Array.from({length:maxFormats+1}, ()=> Array(m+1).fill(null));
+  dp[0][0] = { area:0, cuts:[] };
+  for(let k=1; k<=maxFormats; k++){
+    for(let j=1; j<=m; j++){
+      for(let i=0; i<j; i++){
+        const prev = dp[k-1][i];
+        if(!prev) continue;
+        const seg = segmentCost(i, j);
+        if(!seg) continue;
+        const total = prev.area + seg.area;
+        if(!dp[k][j] || total < dp[k][j].area - 1e-6){
+          dp[k][j] = { area: total, cuts: [...prev.cuts, {i, j, ...seg}] };
+        }
+      }
+    }
+  }
+
+  // El usuario define cuántos rangos quiere: se usa exactamente ese número de formatos
+  // (si no alcanzan los avisos para tantos, se toma el mayor posible).
+  let chosen = dp[maxFormats][m];
+  if(!chosen){
+    for(let k=maxFormats-1; k>=1; k--){
+      if(dp[k][m]){ chosen = dp[k][m]; break; }
+    }
+  }
+  if(!chosen) return null;
+
+  // ordenar los formatos del más ancho al más angosto (el ancho suele llevar el grueso)
+  const groups = chosen.cuts
+    .map(c=>({ width:c.width, area:c.area, result:c.result, items: usable.slice(c.i, c.j) }))
+    .sort((a,b)=> b.width - a.width);
+
+  // alternativas de un solo formato, por si prefiere manejar un único rollo
+  const singleOptions = [];
+  for(const w of candidateWidths){
+    const res = packRoll(w, usable, allowRotation);
+    if(res.unplaced.length) continue;
+    singleOptions.push({ width:w, area:w*res.totalLength, result:res });
+  }
+  singleOptions.sort((a,b)=> a.area - b.area);
+  const bestSingle = singleOptions[0] || null;
+
+  return {
+    groups,
+    allowRotation,
+    totalArea: chosen.area,
+    bestSingle,
+    overflowCount: overflowItems.length,
+    overflowItems
+  };
+}
+
+// Parte un montaje largo en varias tiradas, cada una de máximo maxLenCm de largo.
+// Las filas (shelves) se reparten enteras: nunca se corta una fila por la mitad.
+// El montaje YA NO se parte por largo: cada montaje va completo, del largo que sea.
+// La función se conserva devolviendo siempre una sola parte para no tener que tocar
+// todos los puntos que la llaman.
+function splitResultByMaxLength(result, maxLenCm){
+  return [result];
+}
+function splitResultByMaxLength_DESACTIVADA(result, maxLenCm){
+  if(!maxLenCm || maxLenCm <= 0 || result.totalLength <= maxLenCm) return [result];
+  const chunks = [];
+  let current = [];
+  let currentLen = 0;
+  result.shelves.forEach(sh=>{
+    if(current.length && currentLen + sh.height > maxLenCm + 1e-6){
+      chunks.push(current); current = []; currentLen = 0;
+    }
+    current.push(sh);
+    currentLen += sh.height;
+  });
+  if(current.length) chunks.push(current);
+
+  return chunks.map(shelvesRaw=>{
+    let y = 0;
+    const shelves = shelvesRaw.map(sh=>{
+      // se desplazan los avisos por el mismo delta que la fila, para conservar el
+      // orden en que están apilados dentro de sus columnas (no todos al mismo y).
+      const delta = y - sh.y;
+      const ns = { height: sh.height, usedWidth: sh.usedWidth, y, items: sh.items.map(it=>({...it, y: it.y + delta})) };
+      y += sh.height;
+      return ns;
+    });
+    const totalLength = y;
+    const usedArea = shelves.reduce((s,sh)=> s + sh.items.reduce((si,it)=> si + it.w*it.h, 0), 0);
+    const placedCount = shelves.reduce((s,sh)=> s + sh.items.length, 0);
+    return { shelves, totalLength, unplaced: [], placedCount, efficiency: 0, _usedArea: usedArea };
+  });
+}
+
+// MODO "MIS ROLLOS": reparte los avisos entre los anchos que el usuario tiene en bodega.
+// Solo se aceptan las filas cuyo aprovechamiento llegue al mínimo exigido; lo que no llega
+// se devuelve como "por fuera" para que el usuario lo maneje aparte.
+function packByAvailableRolls(items, widths, minEffPct, allowRotation, machineWidth){
+  const effAlto = it => allowRotation ? Math.min(it.w, it.h) : it.w;
+  const usableWidths = [...new Set(widths)].filter(w=> w>0 && w<=machineWidth).sort((a,b)=> b-a);
+  const tooWide = [...new Set(widths)].filter(w=> w>machineWidth);
+
+  // id único para poder identificar qué piezas quedaron colocadas
+  let pool = items.map((it,i)=> ({...it, _id: i}));
+  const rolls = [];
+
+  usableWidths.forEach(w=>{
+    const fits = pool.filter(it => effAlto(it) <= w);
+    if(!fits.length) return;
+    const res = packRoll(w, fits, allowRotation);
+
+    // conservar solo las filas que alcanzan el aprovechamiento mínimo
+    const kept = res.shelves.filter(sh=>{
+      const used = sh.items.reduce((s,it)=> s + it.w*it.h, 0);
+      const shelfArea = w * sh.height;
+      return shelfArea>0 && (used/shelfArea*100) >= minEffPct - 1e-9;
+    });
+    if(!kept.length) return;
+
+    let y = 0;
+    const shelves = kept.map(sh=>{
+      const ns = { height: sh.height, usedWidth: sh.usedWidth, y, items: sh.items.map(it=>({...it, y})) };
+      y += sh.height;
+      return ns;
+    });
+    const totalLength = y;
+    const usedArea = shelves.reduce((s,sh)=> s + sh.items.reduce((si,it)=> si + it.w*it.h, 0), 0);
+    const placedIds = new Set();
+    shelves.forEach(sh=> sh.items.forEach(it=> placedIds.add(it._id)));
+
+    rolls.push({
+      width: w,
+      items: pool.filter(it=> placedIds.has(it._id)),
+      result: {
+        shelves, totalLength, unplaced: [],
+        placedCount: placedIds.size,
+        efficiency: totalLength>0 ? (usedArea/(w*totalLength)*100) : 0,
+        _usedArea: usedArea
+      }
+    });
+    pool = pool.filter(it=> !placedIds.has(it._id));
+  });
+
+  return { rolls, leftover: pool, tooWide };
+}
+
+function renderAvailableRollsHtml(data, minEffPct, machineWidth){
+  const { rolls, leftover, tooWide } = data;
+  let html = '';
+
+  if(tooWide.length){
+    html += `<div class="unplaced-box" style="background:rgba(240,192,0,0.08);border-color:rgba(240,192,0,0.4);color:var(--yellow);margin-bottom:12px;">
+      ⚠ ${tooWide.join(', ')} cm no se usaron porque superan el ancho de tu máquina (${machineWidth} cm).
+    </div>`;
+  }
+
+  const totalM = rolls.reduce((s,r)=> s + r.result.totalLength, 0)/100;
+  const colocados = rolls.reduce((s,r)=> s + r.items.length, 0);
+
+  html += `<div class="viz-panel"><h2 style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:14px;margin:0 0 4px;">Qué puedes tirar en tus rollos</h2>
+    <p class="sub" style="margin-bottom:10px;">Solo se incluyen las filas que llegan a un aprovechamiento de <strong style="color:var(--good);">${minEffPct}%</strong> o más. Se acomodaron <strong>${colocados}</strong> avisos en ${totalM.toFixed(2)} m de material.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">`;
+
+  if(!rolls.length){
+    html += `<div class="unplaced-box">Ningún rollo alcanza el ${minEffPct}% de aprovechamiento con estos avisos. Baja el mínimo exigido o agrega otros anchos.</div>`;
+  }
+
+  const maxTirajeM = 0;
+  rolls.forEach((r,i)=>{
+    const parts = splitResultByMaxLength(r.result, maxTirajeM*100);
+    const altosReales = r.items.map(it=> it.origH);
+    const minR = Math.round(Math.min(...altosReales)), maxR = Math.round(Math.max(...altosReales));
+    html += `<div class="format-card" data-fmt="${i}" style="padding:11px 13px;background:var(--panel-2);border-radius:8px;border-left:3px solid var(--good);cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;">
+        <strong style="font-family:'Space Grotesk',-apple-system,sans-serif;font-size:16px;color:var(--good);">Rollo de ${r.width} cm</strong>
+        <span style="font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;font-size:12.5px;color:var(--cyan);">${(r.result.totalLength/100).toFixed(2)} m · ${r.result.efficiency.toFixed(0)}% aprov.</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:5px;">${r.items.length} aviso${r.items.length!==1?'s':''} · alto ${minR===maxR? minR+' cm' : minR+'–'+maxR+' cm'}</div>
+      <div style="font-size:12px;color:var(--cyan);margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
+        <span>${(()=>{const u=uidsUsados();const pend=r.items.filter(x=>!u.has(x.uid)).length;
+          return pend===0 ? '<span style="color:var(--good);">✓ todos en montajes</span>'
+               : (pend===r.items.length ? `${parts.length>1?parts.length+' tiradas de máx '+maxTirajeM+' m':'1 tirada'}`
+                                        : `${pend} sin montar de ${r.items.length}`);})()}</span>
+        <span class="fmt-arrow" style="font-family:ui-monospace,monospace;">ver lista de avisos ▸</span>
+      </div>
+      <div class="fmt-detail" data-fmt-detail="${i}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);"></div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  if(rolls.length){
+    html += `<button class="add-btn" id="exportAllBtn" style="margin-top:12px;border-color:var(--good);color:var(--good);">⬇ exportar todo lo que entra (CSV para Excel)</button>`;
+  }
+
+  // AVISOS QUE QUEDAN POR FUERA
+  if(leftover.length){
+    const rowsHtml = leftover
+      .slice()
+      .sort((a,b)=> (a.origH-b.origH) || (a.origW-b.origW) || a.nombre.localeCompare(b.nombre))
+      .map(it=>`<tr style="border-bottom:1px solid var(--line);${estiloFilaForma(it)}">
+        <td style="padding:6px 4px;color:var(--yellow);white-space:nowrap;">${badgeForma(it)}${it.codigo||"—"}</td>
+        <td style="padding:6px 4px;color:var(--text);">${it.nombre}</td>
+        <td style="padding:6px 4px;text-align:right;color:var(--text-dim);">${fmtMedidaReal(it)}</td>
+        <td style="padding:6px 4px;text-align:right;color:var(--danger);white-space:nowrap;">${Math.round(Math.max(it.w,it.h))}×${Math.round(Math.min(it.w,it.h))}</td>
+      </tr>`).join('');
+
+    html += `<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
+      <div style="font-size:13px;color:var(--danger);font-weight:600;margin-bottom:4px;">${leftover.length} aviso${leftover.length!==1?'s':''} por fuera</div>
+      <p class="sub" style="margin-bottom:8px;">No caben en tus rollos o su acomodo no llega al ${minEffPct}% de aprovechamiento. Consígueles otro ancho o bájales el mínimo exigido.</p>
+      <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;">
+        <thead><tr style="border-bottom:1px solid var(--line);">
+          <th style="text-align:left;padding:5px 4px;color:var(--text-dim);font-weight:500;">CÓDIGO</th>
+          <th style="text-align:left;padding:5px 4px;color:var(--text-dim);font-weight:500;">LOCAL</th>
+          <th style="text-align:right;padding:5px 4px;color:var(--text-dim);font-weight:500;">MEDIDA</th>
+          <th style="text-align:right;padding:5px 4px;color:var(--text-dim);font-weight:500;">C/SANGRADO</th>
+        </tr></thead><tbody>${rowsHtml}</tbody>
+      </table></div>
+      <button class="add-btn" id="exportLeftoverBtn" style="margin-top:10px;border-color:var(--danger);color:var(--danger);">⬇ exportar los que quedan por fuera (CSV)</button>
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function renderIdealWidthsHtml(config, machineWidth){
+  if(!config || !config.groups || !config.groups.length) return '';
+  const groups = config.groups;
+  const totalM = (groups.reduce((s,g)=> s + g.result.totalLength, 0)/100).toFixed(2);
+  const totalUsedArea = groups.reduce((s,g)=> s + g.result.shelves.reduce((ss,sh)=> ss + sh.items.reduce((si,it)=> si + it.w*it.h, 0), 0), 0);
+  const globalEff = config.totalArea > 0 ? (totalUsedArea / config.totalArea * 100) : 0;
+
+  let html = `<div class="viz-panel"><h2 style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:14px;margin:0 0 4px;">Formatos recomendados (menor desperdicio)</h2>
+    <p class="sub" style="margin-bottom:10px;">El programa probó todas las formas de repartir tus avisos entre distintos anchos (hasta ${machineWidth} cm, el máximo de tu máquina) y esta es la que menos material bota: <strong style="color:var(--good);">${globalEff.toFixed(0)}% de aprovechamiento global</strong>, ${totalM} m en total.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;">`;
+
+  groups.forEach((g,i)=>{
+    const lenM = (g.result.totalLength/100).toFixed(2);
+    const altos = g.items.map(it=> Math.min(it.w, it.h));
+    const minA = Math.round(Math.min(...altos)), maxA = Math.round(Math.max(...altos));
+    const altosReales = g.items.map(it=> it.origH);
+    const minR = Math.round(Math.min(...altosReales)), maxR = Math.round(Math.max(...altosReales));
+    const maxTirajeM = 0;
+    const parts = splitResultByMaxLength(g.result, maxTirajeM*100);
+    html += `<div class="format-card" data-fmt="${i}" style="padding:11px 13px;background:var(--panel-2);border-radius:8px;border-left:3px solid var(--yellow);cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;">
+        <strong style="font-family:'Space Grotesk',-apple-system,sans-serif;font-size:16px;color:var(--yellow);">Rango ${i+1}: alto ${minR===maxR? minR+' cm' : minR+'–'+maxR+' cm'}</strong>
+        <span style="font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;font-size:12.5px;color:var(--cyan);">rollo ${g.width} cm</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:5px;">${g.items.length} aviso${g.items.length!==1?'s':''} · ${lenM} m · ${g.result.efficiency.toFixed(0)}% aprov. · con sangrado ${minA}–${maxA} cm</div>
+      <div style="font-size:12px;color:var(--cyan);margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
+        <span>${(()=>{const u=uidsUsados();const pend=g.items.filter(x=>!u.has(x.uid)).length;
+          return pend===0 ? '<span style="color:var(--good);">✓ todos en montajes</span>'
+               : (pend===g.items.length ? `${parts.length>1?parts.length+' tiradas de máx '+maxTirajeM+' m':'1 tirada'}`
+                                        : `${pend} sin montar de ${g.items.length}`);})()}</span>
+        <span class="fmt-arrow" style="font-family:ui-monospace,monospace;">ver lista de avisos ▸</span>
+      </div>
+      <div class="fmt-detail" data-fmt-detail="${i}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);"></div>
+    </div>`;
+  });
+  html += `</div>`;
+  html += `<button class="add-btn" id="exportAllBtn" style="margin-top:12px;border-color:var(--good);color:var(--good);">⬇ exportar todos los rangos (CSV para Excel)</button>`;
+
+  // comparación honesta contra usar un solo formato
+  if(config.bestSingle && groups.length > 1){
+    const s = config.bestSingle;
+    const extra = ((s.area - config.totalArea) / config.totalArea * 100);
+    const sM = (s.result.totalLength/100).toFixed(2);
+    html += `<div style="margin-top:12px;padding:10px 12px;background:var(--panel-2);border-radius:8px;">
+      <div style="font-size:11px;color:var(--text-dim);font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;letter-spacing:.03em;margin-bottom:6px;">SI PREFIERES MANEJAR UN SOLO ROLLO:</div>
+      <div style="display:flex;justify-content:space-between;font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;font-size:12px;">
+        <span>Todo en rollo de ${s.width} cm</span>
+        <span style="color:${extra>1?'var(--danger)':'var(--text-dim)'};">${sM} m · ${s.result.efficiency.toFixed(0)}%${extra>1 ? ` · +${extra.toFixed(0)}% material` : ''}</span>
+      </div>
+    </div>`;
+  }
+
+  if(config.overflowCount){
+    html += `<div class="unplaced-box" style="margin-top:12px;">⚠ ${config.overflowCount} aviso(s) tienen un alto mayor que ${machineWidth} cm y no caben en tu máquina de ninguna forma — hay que fraccionarlos o mandarlos a una máquina más ancha.</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function computeAltoRanges(items, k){
+  if(!items.length) return [];
+  // se agrupa por el alto YA con sangrado (it.h), porque eso es lo que realmente
+  // hay que tensionar/imprimir y lo que define el ancho de rollo necesario.
+  const values = items.map(it=>it.h);
+  const centers = kmeans1D(values, k);
+  const clusters = centers.map(()=>[]);
+  items.forEach(it=>{
+    let bestI = 0, bestD = Infinity;
+    centers.forEach((c,i)=>{ const d = Math.abs(it.h-c); if(d<bestD){ bestD=d; bestI=i; } });
+    clusters[bestI].push(it);
+  });
+  return clusters
+    .filter(c=>c.length>0)
+    .map(c=>{
+      const altos = c.map(it=>it.h);
+      return { min: Math.min(...altos), max: Math.max(...altos), items: c };
+    })
+    .sort((a,b)=>a.min-b.min);
+}
+
+// Asigna cada aviso al rollo más angosto de la lista donde cabe (mezclando tamaños chicos
+// y grandes en el mismo rollo cuando su alto sumado entra en el ancho), y hace el nesting
+// completo (varias piezas por fila) dentro de cada ancho de rollo.
+function assignItemsToWidths(items, candidateWidths, allowRotation){
+  const widths = [...candidateWidths].sort((a,b)=>a-b);
+  const groupsMap = new Map();
+  const unassignable = [];
+  items.forEach(it=>{
+    const fits = w => it.w <= w || (allowRotation && it.h <= w);
+    const assigned = widths.find(fits);
+    if(assigned === undefined){ unassignable.push(it); return; }
+    if(!groupsMap.has(assigned)) groupsMap.set(assigned, []);
+    groupsMap.get(assigned).push(it);
+  });
+  const groups = Array.from(groupsMap.entries())
+    .sort((a,b)=>a[0]-b[0])
+    .map(([width, groupItems])=>({ width, items: groupItems, result: packRoll(width, groupItems, allowRotation) }));
+  return { groups, unassignable };
+}
+
+function renderRangeGroups(ranges, candidateWidths, items, allowRotation, sangrado, stockMap, cutNotesHtml, precomputedGroups){
+  const container = document.getElementById('compareResults');
+  if(!items.length){ container.innerHTML = ''; return; }
+
+  const fmtRange = r => r.min===r.max ? `${r.min} cm` : `${r.min}–${r.max} cm`;
+
+  let html = (cutNotesHtml || '') + `<div class="viz-panel"><h2 style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:14px;margin:0 0 4px;">1 · Rangos de alto detectados</h2>
+    <p class="sub" style="margin-bottom:10px;">Referencia de cuántos avisos hay por altura — el montaje real de abajo mezcla tamaños chicos y grandes dentro de un mismo rollo cuando eso da menos desperdicio.</p>
+    <div style="display:flex;flex-direction:column;gap:6px;">`;
+  ranges.forEach((r,i)=>{
+    html += `<div style="display:flex;justify-content:space-between;padding:9px 10px;background:var(--panel-2);border-radius:6px;font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;font-size:12.5px;">
+      <span>Rango ${i+1} · ${fmtRange(r)}</span>
+      <span style="color:var(--cyan);">${r.items.length} aviso${r.items.length!==1?'s':''}</span>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  if(!candidateWidths.length){
+    html += `<div class="unplaced-box">Agrega los anchos que tienes en bodega (arriba) para ver el montaje.</div>`;
+    container.innerHTML = html;
+    return;
+  }
+
+  // Montaje real: si los anchos actuales son exactamente los que la búsqueda automática
+  // recomendó, se usa directamente el resultado de esa búsqueda (ya optimizado por grupo).
+  // Si el usuario cambió los anchos (su bodega real), se reasigna cada aviso al más angosto
+  // que le sirva de esa lista, combinando tamaños dentro de cada rollo.
+  let groups, unassignable;
+  if(precomputedGroups){
+    groups = precomputedGroups;
+    unassignable = [];
+  } else {
+    ({ groups, unassignable } = assignItemsToWidths(items, candidateWidths, allowRotation));
+  }
+
+  if(!groups.length){
+    html += `<div class="unplaced-box">Ninguna pieza cabe en los anchos disponibles.</div>`;
+    container.innerHTML = html;
+    return;
+  }
+
+  html += `<div class="viz-panel"><h2 style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:14px;margin:0 0 4px;">2 · Montaje por rollo</h2>
+    <p class="sub" style="margin-bottom:12px;">Cada aviso va al rollo más angosto donde cabe. Dentro de cada rollo se combinan tamaños distintos para aprovechar mejor el ancho.</p>`;
+
+  const usageByWidth = {};
+
+  groups.forEach((g, gi)=>{
+    const lengthM = parseFloat((g.result.totalLength/100).toFixed(2));
+    usageByWidth[g.width] = (usageByWidth[g.width] || 0) + lengthM;
+    const maxTirajeM = 0;
+    const parts = splitResultByMaxLength(g.result, maxTirajeM*100);
+
+    const counts = {};
+    g.items.forEach(it=>{
+      const key = `${it.nombre}__${it.origW}x${it.origH}`;
+      if(!counts[key]) counts[key] = { nombre: it.nombre, w: it.origW, h: it.origH, count: 0 };
+      counts[key].count++;
+    });
+    const listHtml = Object.values(counts)
+      .map(c=>`<li>${c.nombre} — ${c.w}×${c.h} cm ${c.count>1 ? '× '+c.count : ''}</li>`)
+      .join('');
+
+    const available = stockMap ? stockMap[g.width] : undefined;
+    let stockHtml = '';
+    if(available !== undefined && available !== null){
+      const overBy = lengthM - available;
+      stockHtml = overBy > 0.01
+        ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.4);border-radius:6px;font-size:12px;color:var(--danger);">
+            ⚠ Necesitas ${lengthM} m pero solo tienes ${available} m del rollo ${g.width} cm — te faltan ${overBy.toFixed(2)} m.
+          </div>`
+        : `<div style="margin-top:8px;font-size:11.5px;color:var(--good);">✓ dentro de tu stock (${available} m disponibles)</div>`;
+    }
+
+    // planos: uno por cada tirada, respetando el largo máximo por montaje
+    let planosHtml = '';
+    parts.forEach((p, pi)=>{
+      const { svg, legendHtml } = buildViz(g.width, p, 240);
+      const usedArea = p._usedArea !== undefined ? p._usedArea
+        : p.shelves.reduce((s,sh)=> s + sh.items.reduce((si,it)=> si + it.w*it.h, 0), 0);
+      const eff = p.totalLength>0 ? (usedArea/(g.width*p.totalLength)*100) : 0;
+      planosHtml += `
+        ${parts.length>1 ? `<div style="font-size:12px;color:var(--text);margin:10px 0 4px;font-weight:600;">Tirada ${pi+1} de ${parts.length} — ${(p.totalLength/100).toFixed(2)} m · ${eff.toFixed(0)}% aprov.</div>` : ''}
+        <div class="viz-scroll" style="padding:10px 8px;">${svg}</div>
+        ${pi===parts.length-1 ? legendHtml : ''}`;
+    });
+
+    html += `
+      <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          <strong style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:14px;">Montaje ${gi+1} · Rollo ${g.width} cm</strong>
+          <span style="font-family:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;font-size:12.5px;color:var(--cyan);">${lengthM} m · ${g.result.efficiency.toFixed(0)}% aprov.</span>
+        </div>
+        ${parts.length>1 ? `<div style="font-size:12px;color:var(--yellow);margin-bottom:8px;">✂ Se parte en ${parts.length} tiradas de máximo ${maxTirajeM} m.</div>` : ''}
+        <ul style="margin:0 0 10px;padding-left:18px;font-size:12.5px;color:var(--text-dim);line-height:1.6;">${listHtml}</ul>
+        ${planosHtml}
+        ${stockHtml}
+      </div>
+    `;
+  });
+
+  if(unassignable.length){
+    const list = unassignable.map(u=>`${u.nombre} (${u.origW}×${u.origH} cm real, ${u.w}×${u.h} cm con sangrado)`).join(', ');
+    html += `<div class="unplaced-box" style="margin-top:16px;"><strong>${unassignable.length} pieza(s) no caben</strong> en ninguno de los anchos disponibles: ${list}.</div>`;
+  }
+
+  const summary = Object.entries(usageByWidth).map(([w,m])=>`${m.toFixed(2)} m de rollo ${w} cm`).join(' · ');
+  html += `<div class="unplaced-box" style="background:rgba(0,174,239,0.08);border-color:rgba(0,174,239,0.4);color:var(--cyan);margin-top:16px;">
+    <strong>Resumen de compra/consumo:</strong> ${summary || 'sin datos'}
+  </div>`;
+  html += `</div>`;
+
+  container.innerHTML = html;
+}
+
+// Recomendación inicial (solo texto/números, sin dibujar el acomodo) — se muestra apenas
+// se carga el archivo, antes de tocar "Optimizar acomodo".
+function showInitialRecommendation(){
+  const resultsEl = document.getElementById('results');
+  document.getElementById('compareResults') && (document.getElementById('compareResults').innerHTML = '');
+  const machineWidth = parseFloat(document.getElementById('machineWidth').value);
+  const sangrado = parseFloat(document.getElementById('sangrado').value) || 0;
+
+  if(!machineWidth || machineWidth<=0){
+    resultsEl.innerHTML = '<div class="unplaced-box">Pon el ancho máximo de tu máquina (campo de arriba de todo) para ver la recomendación.</div>';
+    return;
+  }
+  const items = readPieces(sangrado);
+  if(items.length===0){ resultsEl.innerHTML = ''; return; }
+
+  const allowRotation = document.getElementById('allowRotation').checked;
+  const organizarPor = document.getElementById('organizarPor').value;
+
+  // MODO "MIS ROLLOS": reparte los avisos entre los anchos que el usuario ya tiene
+  if(organizarPor === 'rollos'){
+    const widths = document.getElementById('rollosDisponibles').value
+      .split(',').map(s=>parseFloat(s.trim())).filter(n=>n>0);
+    if(!widths.length){
+      resultsEl.innerHTML = '<div class="unplaced-box">Pon los anchos de rollo que tienes disponibles (paso 04).</div>';
+      return;
+    }
+    const minEff = parseFloat(document.getElementById('minAprov').value) || 90;
+    const data = packByAvailableRolls(items, widths, minEff, allowRotation, machineWidth);
+    data.rolls = sortGroupsByWidth(data.rolls);
+    lastIdealConfig = { groups: data.rolls };  // para las listas y exportaciones
+    lastLeftover = data.leftover;
+    forcedGroups = null;
+    resultsEl.innerHTML = renderAvailableRollsHtml(data, minEff, machineWidth);
+    return;
+  }
+
+  const numRanges = parseInt(document.getElementById('numRanges').value) || 4;
+  const config = suggestIdealWidths(items, machineWidth, allowRotation, numRanges);
+  config.groups = sortGroupsByWidth(config.groups);
+  lastIdealConfig = config;   // guardar para poder desplegar la lista de cada rango
+  lastLeftover = null;
+  forcedGroups = null;
+  let html = renderIdealWidthsHtml(config, machineWidth);
+
+  // deja los anchos sugeridos precargados en "anchos en bodega" — el usuario los puede
+  // ajustar si ya tiene material específico comprado.
+  if(config && config.groups && config.groups.length){
+    document.getElementById('compareWidths').value = config.groups.map(g=>g.width).sort((a,b)=>a-b).join(', ');
+  }
+
+  html += `<div class="unplaced-box" style="background:rgba(0,174,239,0.08);border-color:rgba(0,174,239,0.4);color:var(--cyan);">
+    Ya dejé estos anchos precargados en "Anchos en bodega" (paso 06) — cámbialos si ya tienes material específico comprado. Toca <strong>"Optimizar acomodo"</strong> para ver el plano de corte completo.
+  </div>`;
+
+  resultsEl.innerHTML = html;
+}
+
+function runAnalysis(silent){
+  const machineWidth = parseFloat(document.getElementById('machineWidth').value);
+  const rollWidth = parseFloat(document.getElementById('rollWidth').value);
+  const allowRotation = document.getElementById('allowRotation').checked;
+  const sangrado = parseFloat(document.getElementById('sangrado').value) || 0;
+  const mode = document.getElementById('modeSelect').value;
+
+  if(!machineWidth || machineWidth<=0){
+    if(!silent) alert('Pon el ancho máximo de tu máquina — es el primer campo, arriba de todo.');
+    return;
+  }
+  // el ancho de rollo (paso 02) solo hace falta en modo "single" o "compare";
+  // en "groups" el programa sugiere los anchos, no se le exige nada al usuario aquí.
+  if(mode !== 'groups'){
+    if(!rollWidth || rollWidth<=0){
+      if(!silent) alert('Pon un ancho de rollo válido.');
+      return;
+    }
+    if(rollWidth > machineWidth){
+      if(!silent) alert(`Tu máquina solo llega a ${machineWidth} cm de ancho. El rollo que pusiste (${rollWidth} cm) no cabe en la máquina — bájalo o ajusta el ancho de la máquina.`);
+      return;
+    }
+  }
+  const items = readPieces(sangrado);
+  if(items.length===0){
+    if(!silent) alert('Agrega al menos una medida con ancho, alto y cantidad, o sube tu planilla.');
+    return;
+  }
+
+  let result = null;
+  if(mode === 'groups'){
+    // en modo agrupar no tiene sentido meter las 74 piezas en un solo rollo genérico —
+    // cada rango tiene su propio montaje más abajo, así que dejamos esta sección vacía.
+    document.getElementById('results').innerHTML = '';
+  } else {
+    result = packRoll(rollWidth, items, allowRotation);
+    renderResults(rollWidth, result);
+  }
+
+  const allCandidateWidths = document.getElementById('compareWidths').value
+    .split(',')
+    .map(s=>parseFloat(s.trim()))
+    .filter(n=> n>0);
+  const candidateWidths = allCandidateWidths.filter(w => w <= machineWidth);
+  const excludedWidths = allCandidateWidths.filter(w => w > machineWidth);
+  let machineNoteHtml = '';
+  if(excludedWidths.length){
+    machineNoteHtml = `<div class="unplaced-box" style="background:rgba(240,192,0,0.08);border-color:rgba(240,192,0,0.4);color:var(--yellow);margin-bottom:14px;">
+      ⚠ ${excludedWidths.join(', ')} cm no se consideraron porque tu máquina (${machineWidth} cm) no los soporta.
+    </div>`;
+  }
+
+  if(mode === 'compare'){
+    renderComparison(rollWidth, result, candidateWidths, items, allowRotation);
+    if(machineNoteHtml) document.getElementById('compareResults').innerHTML = machineNoteHtml + document.getElementById('compareResults').innerHTML;
+  } else if(mode === 'groups'){
+    const stockRaw = document.getElementById('stockMeters').value.split(',').map(s=>s.trim());
+    const stockMap = {};
+    allCandidateWidths.forEach((w,i)=>{
+      const v = parseFloat(stockRaw[i]);
+      stockMap[w] = (stockRaw[i] && !isNaN(v)) ? v : null;
+    });
+    const numRanges = parseInt(document.getElementById('numRanges').value) || 4;
+    const ranges = computeAltoRanges(items, numRanges);
+    const neededWidths = [...new Set(ranges.map(r => r.max))] // r.max ya incluye el sangrado
+      .filter(w => w <= machineWidth);
+
+    // rollos que no caben en la máquina: sugerir cómo fraccionarlos y sumarlos como opción real
+    const usableWidths = new Set(candidateWidths);
+    let cutNotesHtml = '';
+    let leftoverExcluded = [];
+    excludedWidths.forEach(origW=>{
+      const cut = suggestCutWidth(origW, machineWidth, neededWidths);
+      if(!cut){ leftoverExcluded.push(origW); return; }
+      usableWidths.add(cut.width);
+      const origStock = stockMap[origW];
+      if(origStock !== null && origStock !== undefined){
+        const addedStock = origStock * cut.strips;
+        stockMap[cut.width] = (stockMap[cut.width] != null ? stockMap[cut.width] : 0) + addedStock;
+        cutNotesHtml += `<div class="unplaced-box" style="background:rgba(95,213,138,0.08);border-color:rgba(95,213,138,0.4);color:var(--good);margin-bottom:10px;">
+          ✂ <strong>Tu rollo de ${origW} cm no cabe en la máquina</strong> (máx ${machineWidth} cm), pero lo puedes fraccionar: córtalo en ${cut.strips} tira(s) de ${cut.width} cm${cut.leftover>0.5 ? ` (sobran ~${cut.leftover.toFixed(0)} cm de desperdicio por corte)` : ' — sin desperdicio en el corte'}.
+          Ya lo sumé como ${addedStock.toFixed(1)} m disponibles del ancho ${cut.width} cm (tus ${origStock} m × ${cut.strips} tiras).
+        </div>`;
+      } else {
+        if(stockMap[cut.width] === undefined) stockMap[cut.width] = null;
+        cutNotesHtml += `<div class="unplaced-box" style="background:rgba(95,213,138,0.08);border-color:rgba(95,213,138,0.4);color:var(--good);margin-bottom:10px;">
+          ✂ <strong>Tu rollo de ${origW} cm no cabe en la máquina</strong> (máx ${machineWidth} cm), pero lo puedes fraccionar: córtalo en ${cut.strips} tira(s) de ${cut.width} cm${cut.leftover>0.5 ? ` (sobran ~${cut.leftover.toFixed(0)} cm de desperdicio por corte)` : ' — sin desperdicio en el corte'}. Ya lo agregué como opción de ${cut.width} cm.
+        </div>`;
+      }
+    });
+    if(leftoverExcluded.length){
+      cutNotesHtml += `<div class="unplaced-box" style="background:rgba(240,192,0,0.08);border-color:rgba(240,192,0,0.4);color:var(--yellow);margin-bottom:10px;">
+        ⚠ ${leftoverExcluded.join(', ')} cm no se pudieron aprovechar ni fraccionando, porque tu máquina (${machineWidth} cm) no los soporta.
+      </div>`;
+    }
+
+    // Recomendación de formatos (independiente de tu bodega) — optimización automática de
+    // cuántos anchos conviene usar y de cuáles, minimizando el desperdicio total.
+    const idealConfig = suggestIdealWidths(items, machineWidth, allowRotation, numRanges);
+    idealConfig.groups = sortGroupsByWidth(idealConfig.groups);
+    const recoHtml = renderIdealWidthsHtml(idealConfig, machineWidth);
+
+    // Si estás usando exactamente los anchos que la optimización recomendó (no los cambiaste
+    // a mano), se usa directo ese reparto ya optimizado en vez de reasignar pieza por pieza.
+    let precomputedGroups = null;
+
+    // 1) si aplicaste una unificación, se respeta ESE agrupamiento (si no, el reparto
+    //    automático mandaría todo al rollo más angosto y el rollo unificado quedaría vacío)
+    if(forcedGroups && forcedGroups.length){
+      const forcedW = forcedGroups.map(g=>g.width).sort((a,b)=>a-b);
+      const currentW = [...allCandidateWidths].sort((a,b)=>a-b);
+      const same = forcedW.length === currentW.length && forcedW.every((w,i)=> w === currentW[i]);
+      if(same) precomputedGroups = forcedGroups;
+      else forcedGroups = null; // cambiaste los anchos a mano: se descarta la unificación
+    }
+
+    // 2) si no, y los anchos coinciden con los recomendados, se usa el reparto óptimo
+    if(!precomputedGroups && idealConfig && idealConfig.groups && idealConfig.groups.length && excludedWidths.length === 0){
+      const idealW = idealConfig.groups.map(g=>g.width).sort((a,b)=>a-b);
+      const currentW = [...allCandidateWidths].sort((a,b)=>a-b);
+      const same = idealW.length === currentW.length && idealW.every((w,i)=> w === currentW[i]);
+      if(same){
+        precomputedGroups = idealConfig.groups.map(g=>({
+          width: g.width,
+          items: g.items,
+          result: g.result
+        }));
+      }
+    }
+
+    // guardar la última recomendación para poder construir las unificaciones
+    lastIdealConfig = idealConfig;
+
+    const finalWidths = Array.from(usableWidths).sort((a,b)=>a-b);
+    renderRangeGroups(ranges, finalWidths, items, allowRotation, sangrado, stockMap, recoHtml + cutNotesHtml, precomputedGroups);
+  } else {
+    document.getElementById('compareResults').innerHTML = '';
+  }
+
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+document.getElementById('calcBtn').addEventListener('click', ()=>{
+  forcedGroups = null; // recalcular limpio si aprieta el botón manualmente
+  runAnalysis(false);
+});
+
+// Tocar un rango: despliega la LISTA de avisos de ese rango (código + medidas),
+// agrupada por tirada, con opción de exportarla.
+document.addEventListener('click', (e)=>{
+  if(e.target.closest('.export-btn')) return;
+  // los clics DENTRO de la lista ya abierta (chulear un aviso, etc.) no deben
+  // cerrar el panel — solo tocar el encabezado de la tarjeta abre/cierra.
+  if(e.target.closest('.fmt-detail')) return;
+  const card = e.target.closest('.format-card');
+  if(!card) return;
+  const idx = parseInt(card.dataset.fmt);
+  const detail = card.querySelector('.fmt-detail');
+  const arrow = card.querySelector('.fmt-arrow');
+  if(!detail) return;
+
+  // evita que un doble toque accidental (o un rebote del navegador) cierre el panel
+  const now = Date.now();
+  if(now - (parseInt(detail.dataset.ts) || 0) < 400) return;
+  detail.dataset.ts = String(now);
+
+  if(detail.style.display === 'block'){
+    detail.style.display = 'none';
+    if(arrow) arrow.textContent = 'ver lista de avisos ▸';
+    return;
+  }
+
+  const groups = currentGroups();
+  if(!groups || !groups[idx]) return;
+  const g = groups[idx];
+  const maxTirajeM = 0;
+  const parts = splitResultByMaxLength(g.result, maxTirajeM*100);
+
+  const usados = uidsUsados();
+  let inner = '';
+  parts.forEach((p, pi)=>{
+    const rows = [];
+    p.shelves.forEach(sh=> sh.items.forEach(it=> rows.push(it)));
+    rows.sort((a,b)=> (a.origH-b.origH) || (a.origW-b.origW) || a.nombre.localeCompare(b.nombre));
+    const libres = rows.filter(it=> !usados.has(it.uid));
+    const rowsHtml = rows.map(it=>{
+      const yaUsado = usados.has(it.uid);
+      const cual = yaUsado ? montajes.find(m=> m.items.some(x=>x.uid===it.uid)) : null;
+      return `
+      <tr style="border-bottom:1px solid var(--line);${estiloFilaForma(it)}${yaUsado?'opacity:.45;':''}">
+        <td style="padding:6px 2px;">${yaUsado
+          ? '<span title="ya está en un montaje" style="color:var(--good);font-size:13px;">✓</span>'
+          : `<input type="checkbox" class="sel-aviso" data-uid="${it.uid}" ${selectedUids.has(it.uid)?'checked':''} style="width:16px;height:16px;">`}</td>
+        <td style="padding:6px 4px;color:var(--yellow);white-space:nowrap;">${badgeForma(it)}${it.codigo||"—"}</td>
+        <td style="padding:6px 4px;color:var(--text);">${it.nombre}${yaUsado&&cual?`<br><span style="font-size:10px;color:var(--good);">en ${cual.nombre}</span>`:''}</td>
+        <td style="padding:6px 4px;text-align:right;color:var(--text-dim);">${fmtMedidaReal(it)}</td>
+        <td style="padding:6px 4px;text-align:right;color:var(--cyan);white-space:nowrap;">${(it.origW+sangradoActual()*2).toFixed(0)}×${(it.origH+sangradoActual()*2).toFixed(0)}</td>
+      </tr>`;}).join('');
+
+    inner += `<div style="margin-bottom:${pi<parts.length-1?'18px':'0'};">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+        <strong style="font-size:13px;color:var(--text);">${parts.length>1 ? `Tirada ${pi+1} de ${parts.length}` : 'Tirada única'} · rollo ${g.width} cm</strong>
+        <span style="font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;color:var(--cyan);">${(p.totalLength/100).toFixed(2)} m · ${libres.length} disponible${libres.length!==1?'s':''}${rows.length!==libres.length?` de ${rows.length}`:''}</span>
+      </div>
+      <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;">
+        <thead><tr style="border-bottom:1px solid var(--line);">
+          <th style="width:26px;padding:5px 2px;"></th>
+          <th style="text-align:left;padding:5px 4px;color:var(--text-dim);font-weight:500;">CÓDIGO</th>
+          <th style="text-align:left;padding:5px 4px;color:var(--text-dim);font-weight:500;">LOCAL</th>
+          <th style="text-align:right;padding:5px 4px;color:var(--text-dim);font-weight:500;">MEDIDA</th>
+          <th style="text-align:right;padding:5px 4px;color:var(--text-dim);font-weight:500;">C/SANGRADO</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div>
+    </div>`;
+  });
+
+  inner += `<button class="add-btn export-btn" data-export-fmt="${idx}" style="margin-top:12px;border-color:var(--good);color:var(--good);">⬇ exportar este rango (CSV)</button>`;
+
+  detail.innerHTML = inner;
+  detail.style.display = 'block';
+  if(arrow) arrow.textContent = 'ocultar lista ▾';
+});
+
+function currentGroups(){
+  return (forcedGroups && forcedGroups.length) ? forcedGroups
+       : (lastIdealConfig && lastIdealConfig.groups) ? lastIdealConfig.groups : null;
+}
+
+function proyectoActual(){
+  return (document.getElementById('proyectoNombre').value || '').trim();
+}
+
+function sangradoActual(){
+  return parseFloat(document.getElementById('sangrado').value) || 0;
+}
+
+function csvEscape(v){
+  const s = String(v==null?'':v);
+  return /[",;\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+
+// ---- Exportar montaje a PDF (hoja carta), usando el diálogo de impresión del navegador ----
+// Cada tirada se dibuja escalada para caber COMPLETA en una hoja carta, conservando la
+// proporción real del rollo (si es angosta y larga, o ancha y corta, se ajusta igual).
+function buildPrintSvg(rollWidth, result){
+  let rects = '';
+  const nameColor = {};
+  let colorIdx = 0;
+  const fontBig = Math.max(rollWidth, result.totalLength) * 0.014;
+  const fontSmall = fontBig * 0.85;
+  result.shelves.forEach(shelf=>{
+    shelf.items.forEach(it=>{
+      if(!(it.nombre in nameColor)){ nameColor[it.nombre] = CMYK_PALETTE[colorIdx % CMYK_PALETTE.length]; colorIdx++; }
+      const color = nameColor[it.nombre];
+      rects += `<rect x="${it.x}" y="${it.y}" width="${it.w}" height="${it.h}" fill="${color}" fill-opacity="0.9" stroke="#000" stroke-width="${rollWidth*0.002}"/>`;
+      if(it.w > rollWidth*0.09 && it.h > rollWidth*0.09){
+        rects += `<text x="${it.x+it.w/2}" y="${it.y+it.h/2-fontBig*0.6}" font-family="monospace" font-size="${fontBig}" fill="#000" text-anchor="middle" dominant-baseline="middle">MR ${Math.round(it.origW)}×${Math.round(it.origH)}</text>`;
+        rects += `<text x="${it.x+it.w/2}" y="${it.y+it.h/2+fontSmall*0.9}" font-family="monospace" font-size="${fontSmall}" fill="#333" text-anchor="middle" dominant-baseline="middle">MS ${Math.round(it.w)}×${Math.round(it.h)}</text>`;
+      }
+    });
+  });
+  return `<svg viewBox="0 0 ${rollWidth} ${result.totalLength}" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="background:#ede6d6;display:block;">${rects}</svg>`;
+}
+
+function exportMontajePDF(m){
+  const allowRotation = document.getElementById('allowRotation').checked;
+  if(!m.items.length){ alert('Este montaje todavía no tiene avisos.'); return; }
+  const res = packRoll(m.width, m.items, allowRotation);
+  const maxTirajeM = 0;
+  const parts = splitResultByMaxLength(res, maxTirajeM*100);
+  const proy = proyectoActual();
+  const sangrado = sangradoActual();
+
+  // Todo el montaje va en UNA sola hoja carta: el plano a la izquierda (una tira por
+  // cada tirada si hay más de una) y a la derecha el resumen de locales/medidas.
+  // hoja carta = 215.9 x 279.4 mm; @page margin 10mm por lado -> usable 195.9 x 259.4mm.
+  // Se deja además un colchón de seguridad real (no solo teórico) para que la suma
+  // encabezado + cuerpo NUNCA alcance el borde de la hoja y dispare una 2da página.
+  const usableW = 195.9, usableH = 259.4;
+  const safety = 6; // mm de colchón
+  const headerH = 24;
+  const headerGap = 2; // separación entre encabezado y cuerpo
+  const bodyH = usableH - headerH - headerGap - safety;
+  const gap = 4;
+  const leftW = usableW * 0.42;
+  const rightW = usableW - leftW - gap;
+
+  // ---- columna izquierda: un plano por tirada, apilados verticalmente ----
+  const tiraGap = 3;
+  const stripH = (bodyH - (parts.length-1)*tiraGap) / parts.length;
+  let leftHtml = '';
+  parts.forEach((p, pi)=>{
+    const labelH = parts.length>1 ? 5 : 0;
+    const availH = Math.max(stripH - labelH, 10);
+    const scale = Math.min(leftW / m.width, availH / Math.max(p.totalLength,1));
+    const wMm = (m.width * scale).toFixed(1);
+    const hMm = (p.totalLength * scale).toFixed(1);
+    const svg = buildPrintSvg(m.width, p);
+    leftHtml += `<div style="height:${stripH}mm;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;${pi<parts.length-1?`margin-bottom:${tiraGap}mm;`:''}">
+      ${parts.length>1 ? `<div style="font-size:6.5pt;color:#666;margin-bottom:1mm;">Tirada ${pi+1} de ${parts.length} · ${(p.totalLength/100).toFixed(2)} m</div>` : ''}
+      <div style="width:${wMm}mm;height:${hMm}mm;">${svg}</div>
+    </div>`;
+  });
+
+  // ---- columna derecha: resumen de medidas y locales de todos los avisos ----
+  const allItems = [];
+  parts.forEach((p, pi)=> p.shelves.forEach(sh=> sh.items.forEach(it=> allItems.push({...it, _tirada: pi+1}))));
+  allItems.sort((a,b)=> (a.origH-b.origH) || (a.origW-b.origW) || a.nombre.localeCompare(b.nombre));
+  const n = allItems.length;
+  // la letra se achica automáticamente si hay muchos avisos, para que la lista completa
+  // quepa siempre dentro de la misma hoja.
+  const rowFont = n>34 ? 5.2 : n>26 ? 5.8 : n>18 ? 6.4 : n>10 ? 7.1 : 7.8;
+  const rowPad = n>26 ? 0.7 : 1.2;
+
+  const rowsHtml = allItems.map(it=>{
+    const msW = Math.round(it.origW + sangrado*2), msH = Math.round(it.origH + sangrado*2);
+    return `<tr style="${estiloFilaFormaPrint(it)}">
+      <td style="padding:${rowPad}mm 1mm;color:#a05a00;white-space:nowrap;">${it.tramos?`<strong>${String(it.tramos).split('+').length===3?'U':'L'}</strong> `:''}${it.codigo||'—'}</td>
+      <td style="padding:${rowPad}mm 1mm;">${it.nombre}${parts.length>1?` <span style="color:#999;">(T${it._tirada})</span>`:''}</td>
+      <td style="padding:${rowPad}mm 1mm;text-align:right;color:#555;">${fmtMedidaReal(it, '#a05a00')}</td>
+      <td style="padding:${rowPad}mm 1mm;text-align:right;white-space:nowrap;color:#0a6ea6;">${msW}×${msH}</td>
+    </tr>`;
+  }).join('');
+
+  const rightHtml = `<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:${rowFont}pt;">
+    <thead><tr style="border-bottom:0.4mm solid #ccc;">
+      <th style="text-align:left;padding:${rowPad}mm 1mm;color:#888;font-weight:600;">CÓDIGO</th>
+      <th style="text-align:left;padding:${rowPad}mm 1mm;color:#888;font-weight:600;">LOCAL</th>
+      <th style="text-align:right;padding:${rowPad}mm 1mm;color:#888;font-weight:600;">MR</th>
+      <th style="text-align:right;padding:${rowPad}mm 1mm;color:#888;font-weight:600;">MS</th>
+    </tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>`;
+
+  const totalM = (parts.reduce((s,p)=> s+p.totalLength, 0)/100).toFixed(2);
+
+  const logoEl = document.getElementById('logoMaxprint');
+  const logoImg = logoEl ? `<img class="logo-print" src="${logoEl.src}" alt="MAXPRINT">` : '';
+
+  const pageHtml = `<div class="print-page" style="height:${usableH}mm;overflow:hidden;box-sizing:border-box;">
+    <div style="font-family:-apple-system,Arial,sans-serif;height:${headerH}mm;box-sizing:border-box;margin-bottom:${headerGap}mm;overflow:hidden;display:flex;gap:4mm;align-items:flex-start;">
+      <div style="flex-shrink:0;">${logoImg}</div>
+      <div style="flex:1;min-width:0;">
+      ${proy ? `<div style="font-size:8pt;color:#666;letter-spacing:.05em;text-transform:uppercase;">${proy}</div>` : ''}
+      <div style="font-size:14pt;font-weight:700;">${m.nombre}</div>
+      <div style="font-size:8pt;color:#666;margin-top:0.5mm;">Rollo ${m.width} cm · ${totalM} m total · ${n} aviso${n!==1?'s':''}${parts.length>1?` · ${parts.length} tiradas`:''} · sangrado ${sangrado} cm/lado · MR = medida real · MS = medida con sangrado</div>
+      ${allItems.some(it=> it.tramos) ? `<div style="font-size:7.5pt;margin-top:1mm;">
+        <span style="background:#fff3cc;padding:0 4px;border:0.2mm solid #d9a600;"><strong>L</strong> = aviso en L (2 tramos)</span>
+        <span style="background:#efe4ff;padding:0 4px;border:0.2mm solid #8a52e0;margin-left:4mm;"><strong>U</strong> = aviso en U (3 tramos)</span>
+      </div>` : ''}
+      </div>
+    </div>
+    <div style="display:flex;gap:${gap}mm;height:${bodyH}mm;overflow:hidden;">
+      <div style="width:${leftW}mm;flex-shrink:0;overflow:hidden;">${leftHtml}</div>
+      <div style="width:${rightW}mm;overflow:hidden;">${rightHtml}</div>
+    </div>
+  </div>`;
+
+  document.getElementById('printArea').innerHTML = pageHtml;
+  setTimeout(()=> window.print(), 60);
+}
+
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.export-pdf-btn');
+  if(!b) return;
+  const m = montajes.find(x=> x.id === parseInt(b.dataset.m));
+  if(m) exportMontajePDF(m);
+});
+
+function downloadCsv(filename, rows){
+  // BOM para que Excel abra bien los acentos; ; como separador (Excel en español)
+  const csv = '\uFEFF' + rows.map(r=> r.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 1000);
+}
+
+function buildExportRows(groups, onlyIdx){
+  const maxTirajeM = 0;
+  const sangrado = parseFloat(document.getElementById('sangrado').value) || 0;
+  const rows = [['RANGO','ROLLO (CM)','TIRADA','CODIGO','LOCAL','FORMA','TRAMOS','ANCHO (CM)','ALTO (CM)','ANCHO C/SANGRADO','ALTO C/SANGRADO']];
+  groups.forEach((g, gi)=>{
+    if(onlyIdx !== undefined && onlyIdx !== null && gi !== onlyIdx) return;
+    const parts = splitResultByMaxLength(g.result, maxTirajeM*100);
+    parts.forEach((p, pi)=>{
+      const items = [];
+      p.shelves.forEach(sh=> sh.items.forEach(it=> items.push(it)));
+      items.sort((a,b)=> (a.origH-b.origH) || (a.origW-b.origW) || a.nombre.localeCompare(b.nombre));
+      items.forEach(it=>{
+        rows.push([
+          'Rango '+(gi+1),
+          g.width,
+          parts.length>1 ? `${pi+1} de ${parts.length}` : 'única',
+          it.codigo || '',
+          it.nombre,
+          formaAviso(it),
+          tramosDetalle(it),
+          it.origW,
+          it.origH,
+          (it.origW + sangrado*2).toFixed(1),
+          (it.origH + sangrado*2).toFixed(1)
+        ]);
+      });
+    });
+  });
+  return rows;
+}
+
+// Exportar un rango puntual
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.export-btn');
+  if(!btn) return;
+  e.stopPropagation();
+  const groups = currentGroups();
+  if(!groups) return;
+  const idx = parseInt(btn.dataset.exportFmt);
+  downloadCsv(`rango-${idx+1}-rollo-${groups[idx].width}cm.csv`, buildExportRows(groups, idx));
+});
+
+// Exportar todos los rangos
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('#exportAllBtn');
+  if(!btn) return;
+  const groups = currentGroups();
+  if(!groups) return;
+  downloadCsv('avisos-por-rango.csv', buildExportRows(groups));
+});
+
+// avisos que ya están dentro de algún montaje (no deben volver a ofrecerse)
+function uidsUsados(){
+  const s = new Set();
+  montajes.forEach(m=> m.items.forEach(it=> s.add(it.uid)));
+  return s;
+}
+
+
+// vuelve a dibujar los rangos y las listas abiertas, para reflejar los descuentos
+function refrescarListasAbiertas(){
+  const abiertos = [...document.querySelectorAll('.fmt-detail')]
+    .filter(d=> d.style.display === 'block')
+    .map(d=> d.dataset.fmtDetail);
+
+  // re-dibuja las tarjetas de rango (actualiza el contador de pendientes)
+  if(pieceList.querySelectorAll('.piece-row').length) showInitialRecommendation();
+
+  // vuelve a abrir las que estaban abiertas
+  abiertos.forEach(idx=>{
+    const card = document.querySelector(`.format-card[data-fmt="${idx}"]`);
+    if(card){
+      const d = card.querySelector('.fmt-detail');
+      if(d) d.dataset.ts = '0';
+      card.click();
+    }
+  });
+}
+
+// ============ MÓDULO: MONTAJES PARA IMPRESIÓN ============
+// El diseñador marca avisos (de cualquier rango) y los agrega al montaje que quiera.
+
+function updateSeleccionBar(){
+  const bar = document.getElementById('seleccionBar');
+  document.getElementById('selCount').textContent = selectedUids.size;
+  bar.style.display = selectedUids.size ? 'block' : 'none';
+  const sel = document.getElementById('montajeDestino');
+  const prev = sel.value;
+  sel.innerHTML = montajes.map(m=>`<option value="${m.id}">${m.nombre} (${m.items.length})</option>`).join('')
+    || '<option value="">— crea un montaje primero —</option>';
+  if(montajes.some(m=>String(m.id)===prev)) sel.value = prev;
+}
+
+// marcar / desmarcar un aviso
+document.addEventListener('change', (e)=>{
+  const cb = e.target.closest('.sel-aviso');
+  if(!cb) return;
+  if(cb.checked) selectedUids.add(cb.dataset.uid);
+  else selectedUids.delete(cb.dataset.uid);
+  updateSeleccionBar();
+});
+
+document.getElementById('clearSelBtn').addEventListener('click', ()=>{
+  selectedUids.clear();
+  document.querySelectorAll('.sel-aviso').forEach(x=> x.checked = false);
+  updateSeleccionBar();
+});
+
+document.getElementById('newMontajeBtn').addEventListener('click', ()=>{
+  const maquina = parseFloat(document.getElementById('machineWidth').value) || 160;
+  montajes.push({ id: montajeSeq++, nombre: 'Montaje '+(montajes.length+1), width: maquina, items: [], procesado: false });
+  renderMontajes();
+  updateSeleccionBar();
+  saveEstado();
+});
+
+// mostrar/ocultar el plano de un montaje — nunca se dibuja solo, hay que pedirlo
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.toggle-plano-disenador-btn');
+  if(!b) return;
+  const id = parseInt(b.dataset.m);
+  if(planosAbiertosDisenador.has(id)) planosAbiertosDisenador.delete(id);
+  else planosAbiertosDisenador.add(id);
+  renderMontajes();
+});
+
+// procesar un montaje: lo marca listo y lo hace visible en el Módulo Impresor
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.procesar-btn');
+  if(!b) return;
+  const m = montajes.find(x=> x.id === parseInt(b.dataset.m));
+  if(!m || !m.items.length) return;
+  m.procesado = true;
+  renderMontajes();
+  actualizarConteoHome();
+  saveEstado();
+});
+
+// devolver un montaje procesado a edición (deja de verse en el módulo Impresor)
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.despublicar-btn');
+  if(!b) return;
+  const m = montajes.find(x=> x.id === parseInt(b.dataset.m));
+  if(!m) return;
+  m.procesado = false;
+  renderMontajes();
+  actualizarConteoHome();
+  saveEstado();
+});
+
+// por si el picker no encontró rangos calculados (dato viejo o navegador con versión
+// cacheada): fuerza el recálculo con lo que hay cargado ahora mismo.
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.recalcular-rangos-btn');
+  if(!b) return;
+  if(!pieceList.querySelectorAll('.piece-row').length){
+    alert('Primero carga la planilla (paso 05).');
+    return;
+  }
+  showInitialRecommendation();
+  renderMontajes();
+});
+
+document.getElementById('addToMontajeBtn').addEventListener('click', ()=>{
+  const id = parseInt(document.getElementById('montajeDestino').value);
+  const m = montajes.find(x=>x.id===id);
+  if(!m){ alert('Crea primero un montaje.'); return; }
+  const sangrado = sangradoActual();
+  const todos = readPieces(sangrado);
+  let agregados = 0;
+  selectedUids.forEach(uid=>{
+    if(m.items.some(it=>it.uid===uid)) return;
+    const it = todos.find(x=>x.uid===uid);
+    if(it){ m.items.push(it); agregados++; }
+  });
+  selectedUids.clear();
+  document.querySelectorAll('.sel-aviso').forEach(x=> x.checked = false);
+  renderMontajes();
+  updateSeleccionBar();
+  refrescarListasAbiertas();
+  saveEstado();
+  document.getElementById('montajesPanel').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+let planosAbiertosDisenador = new Set(); // ids de montaje con el plano desplegado (solo si se pide)
+
+function renderMontajes(){
+  const cont = document.getElementById('montajesList');
+  if(!montajes.length){
+    cont.innerHTML = '<p class="sub">Todavía no has creado ningún montaje.</p>';
+    return;
+  }
+  const allowRotation = document.getElementById('allowRotation').checked;
+  const maquina = parseFloat(document.getElementById('machineWidth').value) || 160;
+  const maxTirajeM = 0;
+
+  // la lista de montajes se muestra siempre ordenada de menor a mayor por el ancho
+  // del rollo (m.width), sin importar el orden en que se hayan creado.
+  const montajesOrdenados = montajes.slice().sort((a,b)=> a.width - b.width);
+
+  cont.innerHTML = montajesOrdenados.map((m, mi)=>{
+    const res = m.items.length ? packRoll(m.width, m.items, allowRotation) : null;
+    const parts = res ? splitResultByMaxLength(res, maxTirajeM*100) : [];
+    const noCaben = res ? res.unplaced : [];
+
+    // el plano NO se dibuja automáticamente — solo si el usuario lo pide con el botón
+    const planoAbierto = planosAbiertosDisenador.has(m.id);
+    let planos = '';
+    if(planoAbierto && res && res.placedCount){
+      parts.forEach((p, pi)=>{
+        const { svg } = buildViz(m.width, p, 240);
+        const usedArea = p._usedArea!==undefined ? p._usedArea
+          : p.shelves.reduce((s,sh)=> s + sh.items.reduce((si,it)=> si+it.w*it.h,0),0);
+        const eff = p.totalLength>0 ? (usedArea/(m.width*p.totalLength)*100) : 0;
+        planos += `${parts.length>1?`<div style="font-size:12px;color:var(--text);margin:10px 0 4px;font-weight:600;">Tirada ${pi+1} de ${parts.length} — ${(p.totalLength/100).toFixed(2)} m · ${eff.toFixed(0)}%</div>`:''}
+          <div class="viz-scroll" style="padding:10px 8px;">${svg}</div>`;
+      });
+    }
+
+    const lista = m.items.map(it=>`<li>${it.codigo?`<span style="color:var(--yellow);">${it.codigo}</span> · `:''}${it.nombre} — ${it.origW}×${it.origH} cm${it.tramos?` <span style="color:var(--yellow);">(${String(it.tramos).split('+').length===3?'U':'L'}: ${it.tramos})</span>`:''}
+      <button class="preset-btn quitar-aviso-btn" data-m="${m.id}" data-uid="${it.uid}" style="padding:1px 6px;font-size:10px;border-color:var(--danger);color:var(--danger);margin-left:4px;">quitar</button></li>`).join('');
+
+    // ---- Selector de avisos por rango, dentro del propio montaje ----
+    const grupos = currentGroups() || [];
+    const usados = uidsUsados();
+    let picker = '';
+    if(grupos.length){
+      picker = `<div class="picker-wrap" data-m="${m.id}" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px;">
+        <button class="add-btn toggle-picker-btn" data-m="${m.id}" style="border-color:var(--magenta);color:var(--magenta);margin-top:0;">+ agregar avisos desde los rangos</button>
+        <div class="picker-body" data-m="${m.id}" style="display:none;margin-top:10px;">`;
+      grupos.forEach((g, gi)=>{
+        const libres = g.items.filter(it=> !usados.has(it.uid));
+        const altos = g.items.map(it=> it.origH);
+        const minR = Math.round(Math.min(...altos)), maxR = Math.round(Math.max(...altos));
+        picker += `<div style="margin-bottom:8px;border:1px solid var(--line);border-radius:7px;overflow:hidden;">
+          <button class="preset-btn toggle-rango-btn" data-m="${m.id}" data-g="${gi}" style="width:100%;text-align:left;border:none;border-radius:0;padding:9px 11px;background:var(--panel);display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--yellow);font-weight:600;">Rango ${gi+1} · ${minR===maxR?minR+' cm':minR+'–'+maxR+' cm'} · rollo ${g.width} cm</span>
+            <span style="color:${libres.length?'var(--good)':'var(--text-dim)'};">${libres.length} libre${libres.length!==1?'s':''} ▸</span>
+          </button>
+          <div class="rango-body" data-m="${m.id}" data-g="${gi}" style="display:none;padding:8px 10px;background:var(--panel-2);">
+            ${libres.length ? `
+              <button class="preset-btn pick-all-btn" data-m="${m.id}" data-g="${gi}" style="margin-bottom:8px;">marcar todos</button>
+              <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;">
+                <thead><tr style="border-bottom:1px solid var(--line);">
+                  <th style="width:22px;padding:4px 2px;"></th>
+                  <th style="text-align:left;padding:4px 4px;color:var(--text-dim);font-weight:500;">CÓDIGO</th>
+                  <th style="text-align:left;padding:4px 4px;color:var(--text-dim);font-weight:500;">LOCAL</th>
+                  <th style="text-align:right;padding:4px 4px;color:var(--text-dim);font-weight:500;">MEDIDA</th>
+                  <th style="text-align:right;padding:4px 4px;color:var(--text-dim);font-weight:500;">C/SANGRADO</th>
+                </tr></thead>
+                <tbody>${libres.map(it=>`
+                  <tr style="border-bottom:1px solid var(--line);${estiloFilaForma(it)}">
+                    <td style="padding:5px 2px;width:22px;"><input type="checkbox" class="pick-aviso" data-m="${m.id}" data-uid="${it.uid}" style="width:16px;height:16px;"></td>
+                    <td style="padding:5px 4px;color:var(--yellow);white-space:nowrap;">${badgeForma(it)}${it.codigo||'—'}</td>
+                    <td style="padding:5px 4px;color:var(--text);">${it.nombre}</td>
+                    <td style="padding:5px 4px;text-align:right;color:var(--text-dim);">${fmtMedidaReal(it)}</td>
+                    <td style="padding:5px 4px;text-align:right;color:var(--cyan);white-space:nowrap;">${Math.round(it.w)}×${Math.round(it.h)}</td>
+                  </tr>`).join('')}</tbody>
+              </table></div>`
+            : '<p class="sub" style="margin:0;">Todos los avisos de este rango ya están en algún montaje.</p>'}
+          </div>
+        </div>`;
+      });
+      picker += `<button class="add-btn confirmar-picker-btn" data-m="${m.id}" style="border-color:var(--good);color:var(--good);">✓ agregar los marcados a ${m.nombre}</button>
+        </div></div>`;
+    } else {
+      picker = `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+        <div class="unplaced-box" style="margin-bottom:8px;">No hay rangos calculados todavía.</div>
+        <button class="add-btn recalcular-rangos-btn" style="border-color:var(--magenta);color:var(--magenta);">↻ calcular rangos ahora</button>
+      </div>`;
+    }
+
+    const procesado = !!m.procesado;
+    const estadoHtml = procesado
+      ? `<div style="margin-top:10px;padding:9px 11px;background:rgba(61,220,132,.10);border:1px solid var(--good);border-radius:7px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span style="color:var(--good);font-weight:700;font-size:12px;">✓ Procesado — visible en Módulo Impresor</span>
+          <button class="preset-btn despublicar-btn" data-m="${m.id}" style="border-color:var(--good);color:var(--good);">↩ devolver a edición</button>
+        </div>`
+      : (m.items.length
+          ? `<button class="add-btn procesar-btn" data-m="${m.id}" style="margin-top:10px;border-color:var(--good);color:var(--good);">✓ Procesar montaje para impresión</button>`
+          : '');
+
+    return `<div style="border:1px solid ${procesado?'var(--good)':'var(--line)'};border-radius:8px;padding:12px;margin-bottom:12px;background:var(--panel-2);">
+      <div class="row-inline" style="margin-bottom:8px;">
+        <input type="text" class="montaje-nombre" data-m="${m.id}" value="${m.nombre}" style="flex:1;min-width:120px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 9px;font-size:13px;font-weight:600;">
+        <button class="preset-btn del-montaje-btn" data-m="${m.id}" style="border-color:var(--danger);color:var(--danger);">borrar</button>
+      </div>
+      <div class="row-inline" style="margin-bottom:8px;">
+        <label style="font-size:11px;">ANCHO ROLLO (CM)</label>
+        <input type="number" class="montaje-width" data-m="${m.id}" value="${m.width}" min="1" max="${maquina}" step="1" style="width:90px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px;font-family:ui-monospace,monospace;font-size:12.5px;">
+        ${res && res.placedCount ? `<span style="font-family:ui-monospace,monospace;font-size:12px;color:var(--cyan);">${(res.totalLength/100).toFixed(2)} m · ${res.efficiency.toFixed(0)}% aprov.</span>` : ''}
+      </div>
+      ${noCaben.length ? `<div class="unplaced-box" style="margin:8px 0;">⚠ ${noCaben.length} aviso(s) no caben en un rollo de ${m.width} cm.</div>` : ''}
+      ${m.items.length ? `<ul style="margin:6px 0 10px;padding-left:18px;font-size:12px;color:var(--text-dim);line-height:1.7;">${lista}</ul>` : '<p class="sub" style="margin:6px 0;">Vacío — usa el botón de abajo para agregar avisos.</p>'}
+      ${m.items.length ? `<button class="preset-btn toggle-plano-disenador-btn" data-m="${m.id}" style="margin-top:6px;">${planoAbierto?'ocultar plano ▾':'ver plano ▸'}</button>` : ''}
+      ${planos}
+      ${picker}
+      ${estadoHtml}
+      ${m.items.length ? `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button class="add-btn export-montaje-btn" data-m="${m.id}" style="margin:0;flex:1;min-width:140px;border-color:var(--good);color:var(--good);">⬇ CSV</button>
+        <button class="add-btn export-pdf-btn" data-m="${m.id}" style="margin:0;flex:1;min-width:140px;border-color:var(--cyan);color:var(--cyan);">🖶 PDF (hoja carta)</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ---- Selector de avisos dentro del montaje ----
+// abrir/cerrar el selector completo
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.toggle-picker-btn');
+  if(!b) return;
+  const body = document.querySelector(`.picker-body[data-m="${b.dataset.m}"]`);
+  if(!body) return;
+  const abierto = body.style.display === 'block';
+  body.style.display = abierto ? 'none' : 'block';
+  b.textContent = abierto ? '+ agregar avisos desde los rangos' : '− ocultar rangos';
+});
+
+// abrir/cerrar un rango dentro del selector
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.toggle-rango-btn');
+  if(!b) return;
+  const body = document.querySelector(`.rango-body[data-m="${b.dataset.m}"][data-g="${b.dataset.g}"]`);
+  if(!body) return;
+  body.style.display = (body.style.display === 'block') ? 'none' : 'block';
+});
+
+// marcar todos los libres de un rango
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.pick-all-btn');
+  if(!b) return;
+  const body = document.querySelector(`.rango-body[data-m="${b.dataset.m}"][data-g="${b.dataset.g}"]`);
+  if(!body) return;
+  const cbs = body.querySelectorAll('.pick-aviso');
+  const todos = [...cbs].every(c=>c.checked);
+  cbs.forEach(c=> c.checked = !todos);
+  b.textContent = todos ? 'marcar todos' : 'desmarcar todos';
+});
+
+// confirmar: agrega los marcados a ese montaje
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.confirmar-picker-btn');
+  if(!b) return;
+  const m = montajes.find(x=> x.id === parseInt(b.dataset.m));
+  if(!m) return;
+  const marcados = [...document.querySelectorAll(`.pick-aviso[data-m="${b.dataset.m}"]`)]
+    .filter(c=> c.checked).map(c=> c.dataset.uid);
+  if(!marcados.length){ alert('Marca primero los avisos que quieres agregar.'); return; }
+
+  const todos = readPieces(sangradoActual());
+  let n = 0;
+  marcados.forEach(uid=>{
+    if(m.items.some(it=> it.uid === uid)) return;
+    const it = todos.find(x=> x.uid === uid);
+    if(it){ m.items.push(it); n++; }
+  });
+  renderMontajes();
+  updateSeleccionBar();
+  refrescarListasAbiertas();
+  saveEstado();
+
+  // deja abierto el selector de ese montaje para seguir agregando de otros rangos
+  const body = document.querySelector(`.picker-body[data-m="${m.id}"]`);
+  const toggle = document.querySelector(`.toggle-picker-btn[data-m="${m.id}"]`);
+  if(body){ body.style.display = 'block'; if(toggle) toggle.textContent = '− ocultar rangos'; }
+});
+
+// editar nombre / ancho de un montaje
+document.addEventListener('change', (e)=>{
+  const nm = e.target.closest('.montaje-nombre');
+  if(nm){
+    const m = montajes.find(x=>x.id===parseInt(nm.dataset.m));
+    if(m){ m.nombre = nm.value.trim() || m.nombre; saveEstado(); }
+    return;
+  }
+  const wd = e.target.closest('.montaje-width');
+  if(wd){
+    const m = montajes.find(x=>x.id===parseInt(wd.dataset.m));
+    const maquina = parseFloat(document.getElementById('machineWidth').value) || 160;
+    let v = parseFloat(wd.value);
+    if(!v || v<=0) v = maquina;
+    if(v > maquina){ alert(`Tu máquina solo llega a ${maquina} cm.`); v = maquina; }
+    if(m){ m.width = v; renderMontajes(); saveEstado(); }
+  }
+});
+
+// quitar un aviso de un montaje / borrar montaje / exportar montaje
+document.addEventListener('click', (e)=>{
+  const q = e.target.closest('.quitar-aviso-btn');
+  if(q){
+    const m = montajes.find(x=>x.id===parseInt(q.dataset.m));
+    if(m){ m.items = m.items.filter(it=> it.uid !== q.dataset.uid); renderMontajes(); updateSeleccionBar(); refrescarListasAbiertas(); saveEstado(); }
+    return;
+  }
+  const d = e.target.closest('.del-montaje-btn');
+  if(d){
+    montajes = montajes.filter(x=> x.id !== parseInt(d.dataset.m));
+    renderMontajes(); updateSeleccionBar(); refrescarListasAbiertas(); saveEstado();
+    return;
+  }
+  const x = e.target.closest('.export-montaje-btn');
+  if(x){
+    const m = montajes.find(y=>y.id===parseInt(x.dataset.m));
+    if(!m) return;
+    const sangrado = sangradoActual();
+    const proy = proyectoActual();
+    const rows = [['PROYECTO','MONTAJE','ROLLO (CM)','CODIGO','LOCAL','FORMA','TRAMOS','ANCHO (CM)','ALTO (CM)','ANCHO C/SANGRADO','ALTO C/SANGRADO']];
+    m.items.forEach(it=> rows.push([proy, m.nombre, m.width, it.codigo||'', it.nombre,
+      formaAviso(it), tramosDetalle(it), it.origW, it.origH,
+      (it.origW+sangrado*2).toFixed(1), (it.origH+sangrado*2).toFixed(1)]));
+    const base = (proy? proy+'-' : '') + m.nombre;
+    downloadCsv(`${base.replace(/[^\w\-]+/g,'_')}.csv`, rows);
+  }
+});
+
+// ---- Guardado local (para no perder el trabajo al cerrar) ----
+function buildEstadoSnapshot(){
+  const piezas = [...pieceList.querySelectorAll('.piece-row')].map(r=>({
+    codigo: r.querySelector('.f-codigo').value,
+    nombre: r.querySelector('.f-nombre').value,
+    ancho: r.querySelector('.f-ancho').value,
+    alto: r.querySelector('.f-alto').value,
+    cant: r.querySelector('.f-cant').value,
+    tramos: r.dataset.tramos || ''
+  }));
+  return {
+    piezas, montajes, montajeSeq,
+    config: {
+      machineWidth: document.getElementById('machineWidth').value,
+      sangrado: document.getElementById('sangrado').value,
+      numRanges: document.getElementById('numRanges').value,
+      rollosDisponibles: document.getElementById('rollosDisponibles').value,
+      minAprov: document.getElementById('minAprov').value,
+      organizarPor: document.getElementById('organizarPor').value,
+      proyectoNombre: document.getElementById('proyectoNombre').value
+    }
+  };
+}
+
+function aplicarEstadoSnapshot(st){
+  if(st.config){
+    Object.entries(st.config).forEach(([k,v])=>{
+      const el = document.getElementById(k);
+      if(el && v !== undefined && v !== null) el.value = v;
+    });
+    syncOrganizarPor();
+  }
+  pieceList.innerHTML = '';
+  (st.piezas||[]).forEach(p=> addPieceRow(p.codigo, p.nombre, p.ancho, p.alto, p.cant, p.tramos));
+  montajes = st.montajes || [];
+  montajeSeq = st.montajeSeq || (montajes.length+1);
+}
+
+function saveEstado(){
+  try{
+    localStorage.setItem('optimizador_estado', JSON.stringify(buildEstadoSnapshot()));
+  }catch(err){ /* almacenamiento lleno o no disponible: se ignora */ }
+}
+
+function loadEstado(){
+  try{
+    const raw = localStorage.getItem('optimizador_estado');
+    if(!raw) return false;
+    const st = JSON.parse(raw);
+    aplicarEstadoSnapshot(st);
+    return !!(st.piezas && st.piezas.length);
+  }catch(err){ return false; }
+}
+
+// ============ PROYECTOS GUARDADOS ============
+// Cada "planilla" que subes (con su título y fecha) queda guardada como un proyecto
+// independiente, separado del autoguardado normal — así puedes tener varias listas
+// distintas guardadas al mismo tiempo y volver a abrir cualquiera para seguir
+// trabajando sobre ella, sin que se pisen entre sí.
+// Deja el módulo completamente en blanco, como recién abierto, para empezar un proyecto
+// nuevo desde cero. NO borra nada de la base de datos: los proyectos guardados siguen
+// ahí y se pueden volver a abrir cuando se quiera.
+const CONFIG_POR_DEFECTO = {
+  machineWidth: '320',
+  sangrado: '5',
+  numRanges: '4',
+  rollosDisponibles: '100, 120, 160',
+  minAprov: '90',
+  organizarPor: 'rangos',
+  proyectoNombre: ''
+};
+
+function empezarDeCero(){
+  if(!confirm('¿Empezar de cero?\n\nSe borra de la pantalla la lista de avisos, los montajes y la configuración, y todo vuelve a los valores por defecto.\n\nLos proyectos que ya guardaste NO se borran: siguen disponibles en "proyectos guardados".')) return;
+
+  // configuración a valores de fábrica
+  Object.entries(CONFIG_POR_DEFECTO).forEach(([k,v])=>{
+    const el = document.getElementById(k);
+    if(el) el.value = v;
+  });
+  const rot = document.getElementById('allowRotation');
+  if(rot) rot.checked = true;
+  syncOrganizarPor();
+  syncRollWidthVisibility();
+
+  // datos de trabajo en blanco
+  pieceList.innerHTML = '';
+  montajes = [];
+  montajeSeq = 1;
+  selectedUids.clear();
+  forcedGroups = null;
+  lastIdealConfig = null;
+  lastLeftover = null;
+  planosAbiertosDisenador.clear();
+
+  // resultados en pantalla
+  ['results','compareResults'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '';
+  });
+  const msg = document.getElementById('importMsg');
+  if(msg) msg.textContent = '';
+  const info = document.getElementById('proyectoGuardadoInfo');
+  if(info) info.textContent = '';
+
+  refreshPieceCount();
+  renderMontajes();
+  updateSeleccionBar();
+  actualizarConteoHome();
+  saveEstado();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+document.getElementById('nuevoProyectoBtn').addEventListener('click', empezarDeCero);
+
+const PROYECTOS_KEY = 'optimizador_proyectos_guardados';
+
+// La lista local funciona ahora como CACHÉ: siempre se guarda una copia local de lo que
+// hay en la nube, para que el programa siga usable sin internet y para no perder nada
+// si la base de datos falla.
+function cargarCacheProyectos(){
+  try{ return JSON.parse(localStorage.getItem(PROYECTOS_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function guardarCacheProyectos(lista){
+  try{ localStorage.setItem(PROYECTOS_KEY, JSON.stringify(lista)); }
+  catch(e){ /* almacenamiento lleno: la nube sigue siendo la fuente principal */ }
+}
+
+let proyectosEnMemoria = cargarCacheProyectos();
+let nubeActiva = false;
+
+function marcarEstadoNube(texto, ok){
+  const el = document.getElementById('estadoNube');
+  if(el){
+    el.textContent = texto;
+    el.style.color = ok ? 'var(--good)' : 'var(--text-dim)';
+  }
+}
+
+// Trae la lista desde la base de datos; si falla, se queda con la copia local.
+async function sincronizarProyectos(){
+  if(!window.MPCloud || !window.MPCloud.disponible){
+    nubeActiva = false;
+    marcarEstadoNube('⚠ sin conexión a la base de datos — guardando solo en este equipo', false);
+    return proyectosEnMemoria;
+  }
+  try{
+    const remota = await window.MPCloud.listar();
+    proyectosEnMemoria = remota;
+    guardarCacheProyectos(remota);
+    nubeActiva = true;
+    marcarEstadoNube('🟢 conectado a la base de datos MAXPRINT', true);
+  }catch(e){
+    nubeActiva = false;
+    marcarEstadoNube('⚠ sin conexión — guardando solo en este equipo', false);
+  }
+  return proyectosEnMemoria;
+}
+
+function cargarListaProyectos(){ return proyectosEnMemoria; }
+
+function fmtFechaHora(iso){
+  try{
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'}) + ' · ' +
+           d.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+  }catch(e){ return iso; }
+}
+
+async function guardarProyectoActual(){
+  const nombreActual = (document.getElementById('proyectoNombre').value || '').trim();
+  const titulo = prompt('Nombre del proyecto (título de esta lista de avisos):', nombreActual);
+  if(titulo === null) return;
+  const tituloFinal = titulo.trim() || 'Proyecto sin nombre';
+  document.getElementById('proyectoNombre').value = tituloFinal;
+
+  await sincronizarProyectos();
+  const snapshot = buildEstadoSnapshot();
+  const existente = proyectosEnMemoria.find(p=> (p.titulo||'').trim().toLowerCase() === tituloFinal.toLowerCase());
+
+  let registro;
+  if(existente){
+    const actualizar = confirm(`Ya existe un proyecto guardado con el nombre "${tituloFinal}".\n\n¿Quieres actualizarlo con lo que tienes ahora? (Aceptar = actualizar / Cancelar = guardar como uno nuevo)`);
+    if(actualizar){
+      registro = Object.assign({}, existente, {
+        titulo: tituloFinal,
+        fechaActualizacion: new Date().toISOString(),
+        snapshot
+      });
+    }
+  }
+  if(!registro){
+    registro = {
+      id: 'p' + Date.now() + Math.random().toString(36).slice(2,7),
+      titulo: tituloFinal,
+      fechaCreacion: new Date().toISOString(),
+      fechaActualizacion: new Date().toISOString(),
+      snapshot
+    };
+  }
+
+  mostrarInfoProyectoGuardado(`Guardando "${tituloFinal}"…`);
+  let guardadoEnNube = false;
+  if(window.MPCloud && window.MPCloud.disponible){
+    try{ await window.MPCloud.guardar(registro); guardadoEnNube = true; }
+    catch(e){ guardadoEnNube = false; }
+  }
+  proyectosEnMemoria = proyectosEnMemoria.filter(p=> p.id !== registro.id).concat([registro]);
+  guardarCacheProyectos(proyectosEnMemoria);
+
+  mostrarInfoProyectoGuardado(guardadoEnNube
+    ? `Proyecto "${tituloFinal}" guardado en la base de datos — ${fmtFechaHora(registro.fechaActualizacion)}`
+    : `Proyecto "${tituloFinal}" guardado solo en este equipo (sin conexión) — ${fmtFechaHora(registro.fechaActualizacion)}`);
+}
+
+function mostrarInfoProyectoGuardado(texto){
+  const el = document.getElementById('proyectoGuardadoInfo');
+  if(el) el.textContent = '✅ ' + texto;
+}
+
+function abrirProyecto(id){
+  const p = proyectosEnMemoria.find(x=> x.id === id);
+  if(!p) return;
+  if(!confirm(`¿Abrir el proyecto "${p.titulo}"?\n\nEsto reemplaza los avisos y montajes que tienes en pantalla ahora (si no los has guardado, se pierden).`)) return;
+  aplicarEstadoSnapshot(p.snapshot);
+  saveEstado();
+  refreshPieceCount();
+  renderMontajes();
+  updateSeleccionBar();
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('compareResults').innerHTML = '';
+  mostrarInfoProyectoGuardado(`Proyecto "${p.titulo}" abierto — última actualización ${fmtFechaHora(p.fechaActualizacion)}`);
+  cerrarProyectos();
+}
+
+async function eliminarProyecto(id){
+  const p = proyectosEnMemoria.find(x=> x.id === id);
+  if(!p) return;
+  if(!confirm(`¿Eliminar el proyecto "${p.titulo}"? Esta acción no se puede deshacer.`)) return;
+  if(window.MPCloud && window.MPCloud.disponible){
+    try{ await window.MPCloud.eliminar(id); }
+    catch(e){ alert('No se pudo eliminar de la base de datos. Revisa tu conexión e intenta de nuevo.'); return; }
+  }
+  proyectosEnMemoria = proyectosEnMemoria.filter(x=> x.id !== id);
+  guardarCacheProyectos(proyectosEnMemoria);
+  renderListaProyectos(document.getElementById('buscarProyectoInput').value);
+}
+
+function renderListaProyectos(filtro){
+  const cont = document.getElementById('proyectosLista');
+  let lista = proyectosEnMemoria.slice().sort((a,b)=> new Date(b.fechaActualizacion) - new Date(a.fechaActualizacion));
+  if(filtro && filtro.trim()){
+    const f = filtro.trim().toLowerCase();
+    lista = lista.filter(p=> (p.titulo||'').toLowerCase().includes(f));
+  }
+  if(!lista.length){
+    cont.innerHTML = '<p class="sub">No hay proyectos guardados todavía. Arma tu lista de avisos y toca "guardar como proyecto".</p>';
+    return;
+  }
+  cont.innerHTML = lista.map(p=>{
+    const nAvisos = ((p.snapshot&&p.snapshot.piezas)||[]).reduce((s,pz)=> s + (parseInt(pz.cant)||1), 0);
+    const nMontajes = ((p.snapshot&&p.snapshot.montajes)||[]).length;
+    return `<div style="padding:11px 12px;background:var(--panel-2);border-radius:8px;margin-bottom:8px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:2px;">${p.titulo}</div>
+      <div class="sub" style="margin-bottom:8px;">${fmtFechaHora(p.fechaActualizacion)} · ${nAvisos} aviso${nAvisos!==1?'s':''} · ${nMontajes} montaje${nMontajes!==1?'s':''}</div>
+      <div class="row-inline">
+        <button class="preset-btn abrir-proyecto-btn" data-id="${p.id}" style="border-color:var(--good);color:var(--good);">abrir</button>
+        <button class="preset-btn eliminar-proyecto-btn" data-id="${p.id}" style="border-color:var(--danger);color:var(--danger);">eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function abrirProyectos(){
+  document.getElementById('proyectosOverlay').style.display = 'block';
+  document.getElementById('buscarProyectoInput').value = '';
+  document.getElementById('proyectosLista').innerHTML = '<p class="sub">Consultando la base de datos…</p>';
+  await sincronizarProyectos();
+  renderListaProyectos('');
+}
+function cerrarProyectos(){
+  document.getElementById('proyectosOverlay').style.display = 'none';
+}
+
+document.getElementById('guardarProyectoBtn').addEventListener('click', guardarProyectoActual);
+document.getElementById('verProyectosBtn').addEventListener('click', abrirProyectos);
+document.getElementById('cerrarProyectosBtn').addEventListener('click', cerrarProyectos);
+document.getElementById('proyectosOverlay').addEventListener('click', (e)=>{ if(e.target.id==='proyectosOverlay') cerrarProyectos(); });
+document.getElementById('buscarProyectoInput').addEventListener('input', (e)=> renderListaProyectos(e.target.value));
+document.getElementById('proyectosLista').addEventListener('click', (e)=>{
+  const abrirBtn = e.target.closest('.abrir-proyecto-btn');
+  if(abrirBtn){ abrirProyecto(abrirBtn.dataset.id); return; }
+  const delBtn = e.target.closest('.eliminar-proyecto-btn');
+  if(delBtn){ eliminarProyecto(delBtn.dataset.id); return; }
+});
+
+// al terminar de cargar el módulo de la base de datos, se comprueba la conexión
+window.addEventListener('mpcloud-listo', ()=>{ sincronizarProyectos(); });
+
+// Exportar los avisos que quedaron por fuera (modo "mis rollos")
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('#exportLeftoverBtn');
+  if(!btn) return;
+  if(!lastLeftover || !lastLeftover.length) return;
+  const sangrado = sangradoActual();
+  const rows = [['CODIGO','LOCAL','FORMA','TRAMOS','ANCHO (CM)','ALTO (CM)','ANCHO C/SANGRADO','ALTO C/SANGRADO','MOTIVO']];
+  lastLeftover.slice().sort((a,b)=> a.nombre.localeCompare(b.nombre)).forEach(it=>{
+    rows.push([it.codigo || '', it.nombre, formaAviso(it), tramosDetalle(it), it.origW, it.origH,
+               (it.origW+sangrado*2).toFixed(1), (it.origH+sangrado*2).toFixed(1),
+               'No alcanza el aprovechamiento minimo o no cabe en los rollos disponibles']);
+  });
+  downloadCsv('avisos-por-fuera.csv', rows);
+});
+
+// ============ NAVEGACIÓN ENTRE MÓDULOS ============
+function mostrarVista(v){
+  document.getElementById('homeScreen').style.display  = (v==='home')     ? 'block' : 'none';
+  document.getElementById('designerView').style.display= (v==='designer') ? 'block' : 'none';
+  document.getElementById('printerView').style.display = (v==='printer')  ? 'block' : 'none';
+  const sub = document.getElementById('headerSub');
+  const h1 = document.querySelector('h1');
+  const tag = document.querySelector('.tagline');
+  if(v==='home'){
+    h1.textContent = 'Optimizador de Rollos';
+    h1.style.color = 'var(--accent)';
+    tag.textContent = 'Nesting · Plotter · Publicidad';
+    sub.textContent = 'Organiza los avisos por medidas y arma los montajes para impresión.';
+  }
+  if(v==='designer'){
+    h1.textContent = 'Módulo Diseñador';
+    h1.style.color = 'var(--cyan)';
+    tag.textContent = 'Cargar · Organizar · Montar';
+    sub.textContent = 'Carga la planilla, organiza por rangos o por tus rollos, y arma los montajes.';
+  }
+  if(v==='printer'){
+    h1.textContent = 'Módulo Impresor';
+    h1.style.color = 'var(--magenta)';
+    tag.textContent = 'Montajes listos para tirar';
+    sub.textContent = 'Consulta lo que el diseñador dejó armado: rollo, metros, plano y avisos.';
+  }
+  if(v==='printer') renderPrinterView();
+  if(v==='home') actualizarConteoHome();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.modulo-btn').forEach(b=>{
+  b.addEventListener('click', ()=> mostrarVista(b.dataset.vista));
+});
+document.querySelectorAll('.volver-btn').forEach(b=>{
+  b.addEventListener('click', ()=> mostrarVista('home'));
+});
+document.getElementById('refreshPrinterBtn').addEventListener('click', ()=>{
+  loadEstado();
+  renderPrinterView();
+});
+
+function actualizarConteoHome(){
+  const el = document.getElementById('homeMontajeCount');
+  const procesados = montajes.filter(m=> m.procesado && m.items.length);
+  el.textContent = procesados.length
+    ? `${procesados.length} montaje${procesados.length!==1?'s':''} procesado${procesados.length!==1?'s':''}`
+    : 'Sin montajes procesados';
+}
+
+let planosAbiertosImpresor = new Set(); // ids de montaje con plano desplegado en Impresión
+
+// ============ VISTA IMPRESOR ============
+function renderPrinterView(){
+  const cont = document.getElementById('printerList');
+  const listos = montajes.filter(m=> m.procesado && m.items.length)
+    .sort((a,b)=> a.width - b.width); // menor a mayor por ancho de rollo
+  if(!listos.length){
+    cont.innerHTML = `<div class="unplaced-box">El diseñador todavía no ha procesado ningún montaje. Cuando procese uno, aparece aquí.</div>`;
+    return;
+  }
+  const allowRotation = true;
+  const maxTirajeM = 0;
+  const sangrado = sangradoActual();
+
+  let html = '';
+  const proy = proyectoActual();
+  if(proy){
+    html += `<div class="panel" style="border-color:var(--magenta);margin-bottom:14px;">
+      <div style="font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);">Proyecto</div>
+      <div style="font-weight:800;font-size:18px;letter-spacing:.04em;color:var(--magenta);margin-top:4px;">${proy}</div>
+    </div>`;
+  }
+  let totalMetros = 0, totalAvisos = 0, totalImpresos = 0;
+  listos.forEach(m=>{
+    const res = packRoll(m.width, m.items, allowRotation);
+    totalMetros += res.totalLength/100;
+    totalAvisos += m.items.length;
+    totalImpresos += m.items.filter(it=> it.impreso).length;
+  });
+
+  html += `<div class="stats" style="margin-bottom:14px;">
+    <div class="stat"><span class="num">${listos.length}</span><span class="lbl">montajes</span></div>
+    <div class="stat"><span class="num">${totalMetros.toFixed(1)} m</span><span class="lbl">material total</span></div>
+    <div class="stat"><span class="num">${totalImpresos}/${totalAvisos}</span><span class="lbl">avisos impresos</span></div>
+  </div>`;
+
+  listos.forEach(m=>{
+    const res = packRoll(m.width, m.items, allowRotation);
+    const parts = splitResultByMaxLength(res, maxTirajeM*100);
+    const impresos = m.items.filter(it=> it.impreso).length;
+    const completo = impresos === m.items.length;
+
+    const planoAbierto = planosAbiertosImpresor.has(m.id);
+    let planos = '';
+    if(planoAbierto){
+      parts.forEach((p, pi)=>{
+        const { svg, legendHtml } = buildViz(m.width, p, 260);
+        const usedArea = p._usedArea!==undefined ? p._usedArea
+          : p.shelves.reduce((s,sh)=> s + sh.items.reduce((si,it)=> si+it.w*it.h,0),0);
+        const eff = p.totalLength>0 ? (usedArea/(m.width*p.totalLength)*100) : 0;
+        planos += `<div style="margin-top:10px;">
+          <div style="font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:4px;">
+            ${parts.length>1?`Tirada ${pi+1} de ${parts.length}`:'Tirada única'} — ${(p.totalLength/100).toFixed(2)} m · ${eff.toFixed(0)}% aprov.
+          </div>
+          <div class="viz-scroll" style="padding:10px 8px;">${svg}</div>
+          ${pi===parts.length-1 ? legendHtml : ''}
+        </div>`;
+      });
+    }
+
+    const filas = m.items.slice().sort((a,b)=>(a.codigo||'').localeCompare(b.codigo||'')).map(it=>`
+      <tr style="border-bottom:1px solid var(--line);${estiloFilaForma(it)}${it.impreso?'opacity:.5;':''}">
+        <td style="padding:6px 2px;width:22px;"><input type="checkbox" class="marcar-impreso" data-m="${m.id}" data-uid="${it.uid}" ${it.impreso?'checked':''} style="width:17px;height:17px;"></td>
+        <td style="padding:6px 4px;color:var(--yellow);white-space:nowrap;${it.impreso?'text-decoration:line-through;':''}">${badgeForma(it)}${it.codigo||'—'}</td>
+        <td style="padding:6px 4px;color:var(--text);${it.impreso?'text-decoration:line-through;':''}">${it.nombre}</td>
+        <td style="padding:6px 4px;text-align:right;color:var(--text-dim);">${fmtMedidaReal(it)}</td>
+        <td style="padding:6px 4px;text-align:right;color:var(--cyan);white-space:nowrap;">${(it.origW+sangrado*2).toFixed(0)}×${(it.origH+sangrado*2).toFixed(0)}</td>
+      </tr>`).join('');
+
+    html += `<div class="viz-panel" style="border-left:3px solid ${completo?'var(--good)':'var(--magenta)'};">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;">
+        <strong style="font-family:'Space Grotesk',-apple-system,sans-serif;font-size:17px;color:${completo?'var(--good)':'var(--magenta)'};">${completo?'✓ ':''}${m.nombre}</strong>
+        <span style="font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:13px;color:var(--cyan);">rollo ${m.width} cm · ${(res.totalLength/100).toFixed(2)} m · ${res.efficiency.toFixed(0)}%</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
+        <strong style="color:${completo?'var(--good)':'var(--text)'};">${impresos}/${m.items.length} impresos</strong> · sangrado ${sangrado} cm por lado${parts.length>1?` · ${parts.length} tiradas`:''}
+      </div>
+      ${res.unplaced.length ? `<div class="unplaced-box" style="margin-top:8px;">⚠ ${res.unplaced.length} aviso(s) no caben en un rollo de ${m.width} cm.</div>` : ''}
+      <div class="row-inline" style="margin-top:10px;">
+        <button class="preset-btn toggle-plano-impresor-btn" data-m="${m.id}">${planoAbierto?'ocultar plano ▾':'ver plano ▸'}</button>
+        <button class="preset-btn marcar-todos-impresos-btn" data-m="${m.id}" style="border-color:var(--good);color:var(--good);">${completo?'desmarcar todos':'✓ marcar todos como impresos'}</button>
+      </div>
+      ${planos}
+      <div style="overflow-x:auto;margin-top:12px;">
+        <table style="width:100%;border-collapse:collapse;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11.5px;">
+          <thead><tr style="border-bottom:1px solid var(--line);">
+            <th style="width:22px;padding:5px 2px;"></th>
+            <th style="text-align:left;padding:5px 4px;color:var(--text-dim);font-weight:500;">CÓDIGO</th>
+            <th style="text-align:left;padding:5px 4px;color:var(--text-dim);font-weight:500;">LOCAL</th>
+            <th style="text-align:right;padding:5px 4px;color:var(--text-dim);font-weight:500;">MEDIDA</th>
+            <th style="text-align:right;padding:5px 4px;color:var(--text-dim);font-weight:500;">C/SANGRADO</th>
+          </tr></thead><tbody>${filas}</tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button class="add-btn export-montaje-btn" data-m="${m.id}" style="margin:0;flex:1;min-width:140px;border-color:var(--good);color:var(--good);">⬇ CSV</button>
+        <button class="add-btn export-pdf-btn" data-m="${m.id}" style="margin:0;flex:1;min-width:140px;border-color:var(--cyan);color:var(--cyan);">🖶 PDF (hoja carta)</button>
+      </div>
+    </div>`;
+  });
+
+  cont.innerHTML = html;
+}
+
+// chulear un aviso como impreso (persiste)
+document.addEventListener('change', (e)=>{
+  const cb = e.target.closest('.marcar-impreso');
+  if(!cb) return;
+  const m = montajes.find(x=> x.id === parseInt(cb.dataset.m));
+  if(!m) return;
+  const it = m.items.find(x=> x.uid === cb.dataset.uid);
+  if(it){ it.impreso = cb.checked; }
+  saveEstado();
+  renderPrinterView();
+});
+
+// marcar/desmarcar todos los avisos de un montaje como impresos
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.marcar-todos-impresos-btn');
+  if(!b) return;
+  const m = montajes.find(x=> x.id === parseInt(b.dataset.m));
+  if(!m) return;
+  const completo = m.items.every(it=> it.impreso);
+  m.items.forEach(it=> it.impreso = !completo);
+  saveEstado();
+  renderPrinterView();
+});
+
+// mostrar/ocultar el plano en el módulo Impresor — tampoco se dibuja solo
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('.toggle-plano-impresor-btn');
+  if(!b) return;
+  const id = parseInt(b.dataset.m);
+  if(planosAbiertosImpresor.has(id)) planosAbiertosImpresor.delete(id);
+  else planosAbiertosImpresor.add(id);
+  renderPrinterView();
+});
+
+
+// ---- Arranque ----
+(function init(){
+  const tenia = loadEstado();
+  refreshPieceCount();
+  renderMontajes();
+  updateSeleccionBar();
+  actualizarConteoHome();
+  mostrarVista('home');
+  // El cálculo de la recomendación ideal (DP sobre anchos candidatos) puede ser pesado
+  // cuando ya hay muchos avisos guardados de una sesión anterior. Se difiere un tick para
+  // que la pantalla de inicio pinte primero — así la app se siente instantánea al abrir,
+  // y el cálculo pesado corre después, en segundo plano, sin bloquear la apertura.
+  if(tenia){
+    const resultsEl = document.getElementById('results');
+    if(resultsEl) resultsEl.innerHTML = '<p class="sub">Calculando recomendación…</p>';
+    setTimeout(showInitialRecommendation, 30);
+  }
+})();
+</script>
+</body>
+</html>
