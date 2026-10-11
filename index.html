@@ -1185,12 +1185,35 @@ function closePortalClientes(){
   document.getElementById('portal-clientes-overlay').style.display='none';
   document.body.style.overflow='';
 }
-function pcLogin(){
+/* ══ Firebase SDK (módulo ESM) para Portal Clientes ══ */
+var _mpdb = null;
+(async function(){
+  try{
+    const {initializeApp,getApps} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const {getFirestore,doc,getDoc,collection,getDocs} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const _cfg={apiKey:"AIzaSyC_89LSZSiuKAqIp_JUnaRRuMwALGCt_8o",authDomain:"tareas-empresa-2911f.firebaseapp.com",projectId:"tareas-empresa-2911f",storageBucket:"tareas-empresa-2911f.firebasestorage.app",messagingSenderId:"686763477486",appId:"1:686763477486:web:b65ee267900d9f49cf3a7f"};
+    const _app=getApps().length?getApps()[0]:initializeApp(_cfg);
+    _mpdb={db:getFirestore(_app),doc,getDoc,collection,getDocs};
+  }catch(e){console.warn('Firebase no disponible:',e);}
+})();
+
+async function pcLogin(){
   var cod=(document.getElementById('pc-cod').value||'').trim().toUpperCase();
   var pass=(document.getElementById('pc-pass').value||'').trim();
-  var clientes=[];
-  try{clientes=JSON.parse(localStorage.getItem('mp_clientes')||'[]');}catch(e){}
-  var cli=clientes.find(function(c){return c.codigo===cod&&c.pass===pass;});
+  if(!cod||!pass){return;}
+  // Mostrar indicador de carga
+  document.getElementById('pc-err').style.display='none';
+  var btnLogin=document.querySelector('#pc-login button[onclick]');
+  if(btnLogin){btnLogin.textContent='Verificando...';}
+  var cli=null;
+  // Intentar Firebase primero
+  if(_mpdb){
+    try{
+      var snap=await _mpdb.getDoc(_mpdb.doc(_mpdb.db,'mp_clientes',cod));
+      if(snap.exists()){var d=snap.data();if(d.pass===pass)cli={codigo:d.codigo,nombre:d.nombre};}
+    }catch(e){console.warn('Firebase login error:',e);}
+  }
+  if(btnLogin){btnLogin.textContent='INGRESAR';}
   if(!cli){
     document.getElementById('pc-err').style.display='';
     document.getElementById('pc-pass').value='';
@@ -1208,13 +1231,19 @@ function pcLogout(){
   document.getElementById('pc-pass').value='';
   document.getElementById('pc-proy-res').innerHTML='';
 }
-function pcBuscarProy(){
+async function pcBuscarProy(){
   var codigo=(document.getElementById('pc-proy-code').value||'').trim().toUpperCase();
   var res=document.getElementById('pc-proy-res');
   if(!codigo){res.innerHTML='';return;}
-  var proyectos=[];
-  try{proyectos=JSON.parse(localStorage.getItem('mp_proyectos')||'[]');}catch(e){}
-  var p=proyectos.find(function(x){return x.code===codigo;});
+  res.innerHTML='<div style="text-align:center;padding:24px;color:#9aa6c4;font-size:14px;">🔍 Consultando...</div>';
+  var p=null;
+  // Buscar en Firebase
+  if(_mpdb){
+    try{
+      var snap=await _mpdb.getDoc(_mpdb.doc(_mpdb.db,'mp_proyectos',codigo));
+      if(snap.exists()){p=snap.data();}
+    }catch(e){console.warn('Firebase proy error:',e);}
+  }
   if(!p){
     res.innerHTML='<div class="portal-notfound">No se encontró el proyecto <strong>'+codigo+'</strong><span>Verifica el código o contacta a MAXPRINT</span></div>';
     return;
@@ -1232,15 +1261,11 @@ function pcBuscarProy(){
   html+='<div class="portal-progress-label">Estado: <strong style="color:'+c+';">'+elbl+'</strong></div>';
   html+='<div class="portal-progress-bar"><div class="portal-progress-fill" style="background:'+c+';width:'+pct+'%"></div></div>';
   if(p.fecha)html+='<div class="portal-info-row">📅 Fecha de instalación: <strong>'+p.fecha+'</strong></div>';
-  // Team
   if(p.participantes&&p.participantes.length){
     html+='<div class="portal-team-title">👷 Equipo de instalación</div>';
     p.participantes.forEach(function(pt){
       html+='<div class="portal-member">';
-      html+='<div class="portal-member-avatar">';
-      if(pt.foto)html+='<img src="'+pt.foto+'" />';
-      else html+='👤';
-      html+='</div>';
+      html+='<div class="portal-member-avatar">👤</div>';
       html+='<div style="flex:1;min-width:0;">';
       html+='<div class="portal-member-name">'+pt.nombre+'</div>';
       if(pt.rol||pt.tipoDoc)html+='<div class="portal-member-role">'+(pt.rol||'')+(pt.tipoDoc&&pt.numDoc?' · '+pt.tipoDoc+' '+pt.numDoc:'')+'</div>';
@@ -1249,17 +1274,14 @@ function pcBuscarProy(){
       html+='</div></div>';
     });
   }
-  // Photos
-  if(p.fotos&&p.fotos.length){
+  if(p._fotosCount&&p._fotosCount>0){
     html+='<div class="portal-photos-title">📷 Fotos del proyecto</div>';
-    html+='<div class="portal-photos-grid">';
-    p.fotos.forEach(function(f){html+='<img src="'+f+'" />';});
-    html+='</div>';
+    html+='<div style="font-size:12px;color:#9aa6c4;padding:8px 0;">'+p._fotosCount+' foto(s) registrada(s). Para ver las fotos contacta a MAXPRINT.</div>';
   }
   html+='</div>';
   res.innerHTML=html;
 }
-// Enter key on code input
+// Tecla Enter en los campos
 document.addEventListener('DOMContentLoaded',function(){
   var ci=document.getElementById('pc-proy-code');
   if(ci)ci.addEventListener('keydown',function(e){if(e.key==='Enter')pcBuscarProy();});
@@ -1267,5 +1289,7 @@ document.addEventListener('DOMContentLoaded',function(){
   if(pi)pi.addEventListener('keydown',function(e){if(e.key==='Enter')pcLogin();});
 });
 </script>
+<!-- Versión -->
+<div style="position:fixed;bottom:10px;right:14px;font-size:10px;color:rgba(255,255,255,.18);pointer-events:none;z-index:1;font-family:'Manrope',sans-serif;letter-spacing:.5px;">maxprint.co v1.2 · 2026-10-11</div>
 </body>
 </html>
