@@ -1,4 +1,4 @@
-<!-- MAXPRINT Control Operativo v1.6 — 2026-10-10 | Fix: cierre HTML + contraseña MAXPRINT2026 + ojo login -->
+<!-- MAXPRINT Control Operativo v1.7 — 2026-10-10 | Fix: cierre HTML + contraseña MAXPRINT2026 + ojo login -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -497,7 +497,7 @@ main{padding:12px;max-width:700px;margin:0 auto;}
       <button onclick="openChangePass()" style="background:transparent;border:none;color:var(--tm);font-size:12px;cursor:pointer;text-decoration:underline;">Cambiar contraseña</button>
     </div>
   </div>
-  <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--tm);letter-spacing:1px;opacity:.6;">v1.6 — 2026-10-10</div>
+  <div style="text-align:center;margin-top:16px;font-size:10px;color:var(--tm);letter-spacing:1px;opacity:.6;">v1.7 — 2026-10-10</div>
 </div>
 
 <!-- ════════ MODAL CAMBIAR CONTRASEÑA ════════ -->
@@ -1274,7 +1274,7 @@ window.doLogout = function(){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 var cfg = { apiKey:"AIzaSyC_89LSZSiuKAqIp_JUnaRRuMwALGCt_8o", authDomain:"tareas-empresa-2911f.firebaseapp.com", projectId:"tareas-empresa-2911f", storageBucket:"tareas-empresa-2911f.firebasestorage.app", messagingSenderId:"686763477486", appId:"1:686763477486:web:b65ee267900d9f49cf3a7f" };
 var PASS = "3942";
@@ -1285,7 +1285,10 @@ var DC = { carpinteria:'--carp', soldadura:'--sold', armado:'--arma', impresion:
 var STD = [{k:'camisa',n:'Camisa',i:'👕'},{k:'pantalon',n:'Pantalón',i:'👖'},{k:'zapatos',n:'Zapatos',i:'👟'},{k:'casco',n:'Casco',i:'⛑️'},{k:'chaleco',n:'Chaleco',i:'🦺'},{k:'guantes',n:'Guantes',i:'🧤'},{k:'botas',n:'Botas',i:'🥾'}];
 window.DN = DN; window.DI = DI;
 
-var db = getFirestore(initializeApp(cfg));
+var app = initializeApp(cfg);
+/* experimentalForceLongPolling resuelve el bloqueo de WebChannel en GitHub Pages */
+var db = initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
+
 var tasks=[], sols=[], emps=[], dots=[];
 var curTab='todos', actDept=null, isAdm=false;
 var pendCId=null, editEId=null, curDEId=null, dotCI=[];
